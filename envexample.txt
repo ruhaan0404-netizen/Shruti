@@ -1,0 +1,7 @@
+GENAI_API_KEY="Gemini api key from google ai studios"
+CAL_KEY="Not neccessary to include, I have just used it while designing."
+LANGCHAIN_TRACING_V2=true // leave them as they are if using langsmith
+LANGSMITH_API_KEY="langsmith api key to study workflow from langgraph"
+LANGCHAIN_PROJECT=JARVIS // leave them as they are if using langsmith
+GROQ_API_KEY="groq api key"
+WTR_API_KEY="weather api key from weatherapi.com"
