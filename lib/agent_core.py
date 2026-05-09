@@ -22,7 +22,7 @@ Tools = [*cal_tools,*e_tools,*wb_tools]
 
 llm = genai(
         api_key=os.getenv("GENAI_API_KEY"),
-        model="gemini-2.5-pro",
+        model="gemini-2.5-flash",
         temperature=0
         )
 llm_with_tools = llm.bind_tools(Tools)
