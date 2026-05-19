@@ -133,7 +133,6 @@ for message in st.session_state.messages:
     elif message["role"] == "assistant":
         with st.chat_message("assistant"):
             # --- TEXT REMOVED HERE ---
-            # Stating message["content"] is skipped so no text renders on screen.
             if message.get("audio_path") and os.path.exists(message["audio_path"]):
                 st.audio(message["audio_path"])
 
@@ -157,8 +156,6 @@ if audio_cmd is not None:
         transcribed_text = transcribe_audio(temp_filename)
         st.session_state.logs.append(f"Transcribed: {transcribed_text}")
         st.session_state.pending_input = transcribed_text
-    
-    # Force the voice widget to reset cleanly by rolling to a new ID
     st.session_state.widget_id += 1
     st.rerun()
 
@@ -171,23 +168,16 @@ if prompt:
 # ----------------------------
 # Check if there is an input waiting from either voice or text
 if st.session_state.pending_input:
-    # Consume the input and clear it from state immediately
     input_text = st.session_state.pending_input
     st.session_state.pending_input = None
-
-    # Immediately render the User message to UI
     st.session_state.messages.append({"role": "user", "content": input_text})
     with st.chat_message("user"):
         st.markdown(input_text)
 
     with st.status("JARVIS is reasoning...", expanded=True) as status:
         st.write("Processing intent and tools...")
-        
-        # Prepare state for Graph
         current_state = st.session_state.memory_state.copy()
         current_state["user_input"] = input_text
-        
-        # Invoke LangGraph
         final_state = st.session_state.graph.invoke(current_state)
         st.session_state.memory_state = final_state  # Update memory state
         
@@ -200,7 +190,7 @@ if st.session_state.pending_input:
     with st.spinner("Generating speech..."):
         audio_path = speak(assistant_response, play_audio=False)
         if audio_path and os.path.exists(audio_path):
-            st.audio(audio_path, autoplay=True) # Autoplay sounds immediately
+            st.audio(audio_path, autoplay=True)
 
     st.session_state.messages.append({
         "role": "assistant", 
