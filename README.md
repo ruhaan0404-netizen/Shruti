@@ -5,4 +5,4 @@ This is a multimodel assistant application which unlike the traditional Agentic 
 ## All the dependencies are mentioned in pyproject.toml file
 ## All the api keys are mentioned in envexample.txt
 
-# All the code is in lib folder.
+# All the code is in Jarvis_Final folder.
