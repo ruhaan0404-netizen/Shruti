@@ -75,7 +75,7 @@ def update_event(event_id:str,event_details:str,calendar_id:str='primary'):
         end: end date and time in iso format, timezone: "Asia/kolkata
         cal_Id: 'primary' for meetings, birthdays, etc. and 'en.indian#holiday@group.v.calendar.google.com' for religious holidays.Keep it primary if not stated explicitly.
         event_details:{
-            "title": "Meeting with Ajith Sir",
+            "title": "Meeting",
             "start_datetime": "20260427T1030",  # Format: yyyymmddTHHMM
             "duration": "1h",                   # Format: [number]d[number]h[number]m
             "location": "College Campus, Bangalore",

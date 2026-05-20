@@ -17,16 +17,16 @@ def get_my_email_address():
     """Retrieves email address of the authenticated user."""
     profile = e_service.users().getProfile(
         userId='me'
-    ).execute()
+     ).execute()
     return profile.get('emailAddress')
 
 @tool
 def create_draft(to:str,sender:str,subject:str,message_body:str):
     """This tool helps you in creating and saving the draft into gmail. You need to pass
-        'to': reciever's email address
-        'sender': sender's email address
-        'subject': subject of the email
-        'message': main body or content of the email"""
+    'to': reciever's email address
+    'sender': sender's email address
+    'subject': subject of the email
+    'message': main body or content of the email"""
 
     message = EmailMessage()
     message.set_content(message_body)
@@ -54,14 +54,14 @@ def email_content_creation(user:str)->str:
     Use it to generate the content for the main body of the email. 
     Pass it a prompt containing all the details pertinent to the email main body as specified by the user."""
     system_prompt=("You are a model who is expert in writing emails. "
-                   "Your job is to compose the main body of the email following the standard format for email composition."
-                   "Understand the context, and ask for specific details and review from the user."
-                   "Don't mention the subject in the body."
-                   "When the complete email body is generated, add a question asking the user to finalise or suggest some changes."
-                   "The question should be framed exactly like this:"
-                   "*** HOW IS IT?"
-                   "*** FINALISE!"
-                   "*** SUGGEST SOME CHANGES.")
+                    "Your job is to compose the main body of the email following the standard format for email composition."
+                    "Understand the context, and ask for specific details and review from the user."
+                    "Don't mention the subject in the body."
+                    "When the complete email body is generated, add a question asking the user to finalise or suggest some changes."
+                    "The question should be framed exactly like this:"
+                    "*** HOW IS IT?"
+                    "*** FINALISE!"
+                    "*** SUGGEST SOME CHANGES.")
     History=[
         {
             "role":"system",
@@ -78,7 +78,7 @@ def email_content_creation(user:str)->str:
         )
         print(f"Writer:\n{response.choices[0].message.content}")
         History.append({"role":"assistant",
-                        "content":response.choices[0].message.content})
+                            "content":response.choices[0].message.content})
         user = input()
     output, question = History[-1]["content"].split("*** HOW IS IT?")
     return output
