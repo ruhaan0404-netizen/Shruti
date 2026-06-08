@@ -7,37 +7,39 @@ from google import genai
 import requests
 from bs4 import BeautifulSoup
 from langchain_community.document_loaders import UnstructuredPDFLoader
-from qdrant_client import AsyncQdrantClient
+from qdrant_client import QdrantClient
 from qdrant_client.models import Distance, VectorParams, PointStruct, Document
 
 load_dotenv()
 
 background_tasks=set()
 
-client = AsyncQdrantClient(
+client = QdrantClient(
     url=os.getenv("NODE"),
     api_key=os.getenv("CLOUD_CLUSTER"),
-    cloud_inference=True
+    cloud_inference=True,
+    https=True,
+    prefer_grpc=False
 )
 
-async def create_collection(collection_name="coding_questions"):
-    if await client.collection_exists(collection_name):
+def create_collection(collection_name="coding_questions"):
+    if client.collection_exists(collection_name):
             print(f"Collection '{collection_name}' already exists. Skipping creation.")
     else:
-        await client.create_collection(
+        client.create_collection(
             collection_name=collection_name,
             vectors_config=VectorParams(size=3072, distance=Distance.COSINE),
         )
         print(f"Collection '{collection_name}' created successfully for the first time!")
 
-async def get_specific_question(model_summary:str):
+def upload_question(model_summary:str):
     with open("specific_question.json","r",encoding="utf-8") as f:
         s= f.read()
         diction = json.loads(s)
     diction['solution']=model_summary
-    await embedding_storage(diction)
+    embedding_storage(diction)
 
-async def embedding_model(content_:str="Hello, Jarvis!"):
+def embedding_model(content_:str="Hello, Jarvis!"):
     client = genai.Client(api_key=os.getenv("CAL_KEY"))
     result = client.models.embed_content(
         model="gemini-embedding-2",
@@ -45,19 +47,19 @@ async def embedding_model(content_:str="Hello, Jarvis!"):
     )
     return result.embeddings[0].values
 
-async def upsert_points(points:list[PointStruct]):
-    await client.upsert(
+def upsert_points(points:list[PointStruct]):
+    client.upsert(
     collection_name="coding_questions",
     points=points,
     )
 
-async def embedding_storage(d:dict):
+def embedding_storage(d:dict):
     with open("index.txt","r") as f:
         i=int(f.read().strip() or 0)
     with open("index.txt","w") as f:
         f.write(str(i+1))
     text = f"{d.get('problem', '')} {d.get('solution', '')}"
-    vector_data = await embedding_model(text)
+    vector_data = embedding_model(text)
     point = PointStruct(
     id=i,
     vector=vector_data,
@@ -68,7 +70,7 @@ async def embedding_storage(d:dict):
         "output": d['metadata']['output'],
     }
     )
-    await upsert_points([point])
+    upsert_points([point])
 
 def ask_codeforces(file_name:str,file_url:str,phase:str=None,contest_id:int=None):
     if contest_id != None:
@@ -120,7 +122,7 @@ def ask_codeforces(file_name:str,file_url:str,phase:str=None,contest_id:int=None
         return "Request failed."
 
 async def get_sub_history():
-    async with httpx.AsyncClient() as client:
+      async with httpx.AsyncClient() as client:
         while(True):
             response = await client.get("https://codeforces.com/api/user.status?handle=Itu_Talishman&from=1&count=30")
             soup = BeautifulSoup(response.content,'lxml')
@@ -133,10 +135,10 @@ async def get_sub_history():
             print("stuck")
             await asyncio.sleep(1800)
 
-async def search_questions(search_text: str, limit: int = 3):
+def search_questions(search_text: str, limit: int = 3):
     print(f"Searching for: '{search_text}'...")
-    query_vector = await embedding_model(search_text)
-    search_results = await client.search(
+    query_vector = embedding_model(search_text)
+    search_results = client.search(
         collection_name="coding_questions",
         query_vector=query_vector,
         limit=limit,
@@ -152,13 +154,24 @@ async def search_questions(search_text: str, limit: int = 3):
         print("-" * 30)
     return 
 
+def ask_question(question:str):
+    response = client.query(
+        collection_name="coding_questions",
+        query_text=question,
+        limit=3, 
+    )
+    for point in response:
+        print(f"ID: {point.id}, Score: {point.score}")
+        print(f"Metadata (Payload): {point.payload}\n")
+
 
 async def main():
-    await create_collection()
-    task = asyncio.create_task(get_sub_history())
-    background_tasks.add(task)
+    create_collection()
+    task1 = asyncio.create_task(get_sub_history())
+    background_tasks.add(task1)
     print("running in background")
     ask_codeforces('specific_question',"https://codeforces.com/contest/2223/problem/A")
-    await task
+    upload_question("Hello World")
+    ask_question("Greeting world?")
 
 asyncio.run(main())
