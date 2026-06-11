@@ -159,4 +159,4 @@ def find_draft_id(to:str,subject:str,body_keys:str):
     else:
         return drafts
 
-Email_tools = [get_my_email_address,create_draft,email_content_creation,send_mail,update_draft,get_saved_draft,find_draft_id]
+EMAIL_TOOLS = [get_my_email_address,create_draft,email_content_creation,send_mail,update_draft,get_saved_draft,find_draft_id]

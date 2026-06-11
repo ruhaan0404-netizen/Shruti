@@ -1,26 +1,10 @@
-import asyncio
-import websockets
-import json
+from agent_core import agent_exe_graph
+from langchain.messages import HumanMessage
 
-async def test_listener():
-    url = "ws://localhost:8765"
-    print(f"📡 Connecting to Jarvis Server at {url}...")
-    
-    try:
-        async with websockets.connect(url) as websocket:
-            print("📱 Fake Flutter UI successfully connected!\n")
-            print("🤖 Waiting for server broadcasts... Go ahead and press Ctrl+Shift+Space!")
-            
-            # Keep listening for incoming JSON messages forever
-            async for message in websocket:
-                data = json.loads(message)
-                print(f"\n📥 RECEIVED FROM PYTHON:")
-                print(f"   Status:  {data.get('status')}")
-                print(f"   Message: {data.get('message')}")
-                print("-" * 30)
-                
-    except ConnectionRefusedError:
-        print("❌ Could not connect. Is your server script running in the other terminal?")
+user_input = input("Mike testing 123")
+graph_inputs = {"messages": [HumanMessage(content=user_input)],"current_batch_index": 0}
+graph_config = {"configurable": {"thread_id": "voice_session_001"}}
 
-if __name__ == "__main__":
-    asyncio.run(test_listener())
+final_state = agent_exe_graph.invoke(graph_inputs,config=graph_config)
+
+print(final_state["messages"][-1])

@@ -1,8 +1,0 @@
-{
-  "metadata": {
-    "title": "A. Zhily and Bracket Swapping",
-    "time limit": "2 seconds",
-    "output": "Output For each test case, output \"YES\" if you can turn both $$$a$$$ and $$$b$$$ into a regular bracket sequences, \"NO\" otherwise. You can output \"YES\" and \"NO\" in any case (for example, \"yES\", \"yes\", and \"Yes\" will be recognized as a positive response)."
-  },
-  "question": "Deep in the wilderness, Zhily and Jily discovered two sequences composed of brackets. Each sequence carries some logical structure, but neither of them is necessarily a regular bracket sequence on its own. They found that by swapping brackets between the two sequences, they could repair them. They wish to make both sequences regular bracket sequences by swapping brackets between them. A regular bracket sequence is a sequence consisting of '(' and ')', which can be turned into a valid math expression by inserting 1 and + any number of times into the sequence. For example, the sequence \"()(()())\" is a regular bracket sequence, while \"())((\" or \"(()\" are not regular bracket sequences. You are given two bracket sequences $$$a$$$ and $$$b$$$ of even length $$$n$$$. You can perform the following operation any number of times: Choose a position $$$i$$$ ($$$1 \\leq i \\leq n$$$) and swap $$$a_i$$$ and $$$b_i$$$. Determine whether you can turn both $$$a$$$ and $$$b$$$ into regular bracket sequences."
-}

@@ -4,9 +4,9 @@ import httpx
 import json
 from load_dotenv import load_dotenv
 from google import genai
+from langchain.tools import tool
 import requests
 from bs4 import BeautifulSoup
-from langchain_community.document_loaders import UnstructuredPDFLoader
 from qdrant_client import QdrantClient
 from qdrant_client.models import Distance, VectorParams, PointStruct, Document
 
@@ -19,7 +19,8 @@ client = QdrantClient(
     api_key=os.getenv("CLOUD_CLUSTER"),
     cloud_inference=True,
     https=True,
-    prefer_grpc=False
+    prefer_grpc=False,
+    check_compatibility=False
 )
 
 def create_collection(collection_name="coding_questions"):
@@ -32,7 +33,9 @@ def create_collection(collection_name="coding_questions"):
         )
         print(f"Collection '{collection_name}' created successfully for the first time!")
 
+@tool
 def upload_question(model_summary:str):
+    """Upload a question on the cloud database"""
     with open("specific_question.json","r",encoding="utf-8") as f:
         s= f.read()
         diction = json.loads(s)
@@ -72,7 +75,9 @@ def embedding_storage(d:dict):
     )
     upsert_points([point])
 
+@tool
 def ask_codeforces(file_name:str,file_url:str,phase:str=None,contest_id:int=None):
+    """Retrieve any information from codeforces"""
     if contest_id != None:
         file_url=file_url+f"?contestId={contest_id}"
     response = requests.get(file_url)
@@ -121,8 +126,10 @@ def ask_codeforces(file_name:str,file_url:str,phase:str=None,contest_id:int=None
     else:
         return "Request failed."
 
+@tool
 async def get_sub_history():
-      async with httpx.AsyncClient() as client:
+    """Get submission history"""
+    async with httpx.AsyncClient() as client:
         while(True):
             response = await client.get("https://codeforces.com/api/user.status?handle=Itu_Talishman&from=1&count=30")
             soup = BeautifulSoup(response.content,'lxml')
@@ -135,7 +142,9 @@ async def get_sub_history():
             print("stuck")
             await asyncio.sleep(1800)
 
+@tool
 def search_questions(search_text: str, limit: int = 3):
+    """Get a list of questions."""
     print(f"Searching for: '{search_text}'...")
     query_vector = embedding_model(search_text)
     search_results = client.search(
@@ -154,7 +163,9 @@ def search_questions(search_text: str, limit: int = 3):
         print("-" * 30)
     return 
 
+@tool
 def ask_question(question:str):
+    """Retrieve a question that might be saved on the cloud database."""
     response = client.query(
         collection_name="coding_questions",
         query_text=question,
@@ -174,4 +185,5 @@ async def main():
     upload_question("Hello World")
     ask_question("Greeting world?")
 
-asyncio.run(main())
+
+CODEFORCES_TOOLS = [ask_codeforces,ask_question,search_questions,get_sub_history,upload_question]

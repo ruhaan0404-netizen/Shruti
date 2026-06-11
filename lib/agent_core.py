@@ -1,94 +1,125 @@
-import os
-from tools import calendar_tool as cl
-from tools import email_tool as em
-from tools import web_scraping as wb
-from typing import TypedDict, Annotated, Sequence
-from langchain_google_genai import ChatGoogleGenerativeAI as genai
-from langchain_core.messages import HumanMessage, AIMessage, SystemMessage, ToolMessage, BaseMessage
-from langgraph.graph.message import add_messages
-from datetime import datetime
-from zoneinfo import ZoneInfo
-from dotenv import load_dotenv
 from langgraph.graph import StateGraph, START, END
-from langgraph.prebuilt import ToolNode
+from langchain.messages import SystemMessage, HumanMessage, AIMessage
+from agentstate import AgentState, Task, TaskBatch
+from dotenv import load_dotenv
+from langchain.chat_models import init_chat_model
+from langchain.agents import create_agent
+from langgraph.checkpoint.serde.jsonplus import JsonPlusSerializer
+from prompt import  SUPERVISOR_PROMPT, CALENDAR_AGENT_PROMPT, EMAIL_AGENT_PROMPT, CODEFORCES_AGENT_PROMPT, GENERAL_AGENT_PROMPT
+from tools.calendar_tool import CALENDAR_TOOLS
+from tools.email_tool import EMAIL_TOOLS
+from tools.codeforces_tool import CODEFORCES_TOOLS
+from langgraph.checkpoint.memory import MemorySaver
+from langgraph.graph import END
+from langgraph.types import Send
 
-load_dotenv()
+load_dotenv() # Load the environment variables(API keys, other parameters)
 
-cal_tools = cl.Calendar_tools
-e_tools = em.Email_tools
-wb_tools = wb.Web_tools
+# ----------------------------------------------------- #
+# Use gemini for tool calling and subagent execution
+model = init_chat_model("gemini-2.5-flash",model_provider="google_genai", temperature=0.7) # Initialising the subagent model.
 
-Tools = [*cal_tools,*e_tools,*wb_tools]
-
-llm = genai(
-        api_key=os.getenv("GENAI_API_KEY"),
-        model="gemini-2.5-flash",
-        temperature=0
-        )
-llm_with_tools = llm.bind_tools(Tools)
-
-class AgentState(TypedDict):
-    messages:Annotated[Sequence[BaseMessage], add_messages]
-
-# _____NODES_____ #
-def ask_anything(state:AgentState)->AgentState:
-    if not state["messages"]:
-        user = HumanMessage(content=input("How can I help you, Sir?"))
-    else:
-        user = HumanMessage(content=input())
-    state['messages'].append(user)
-    return state
-
-def reason_plan(state:AgentState)->AgentState:
-    global llm_with_tools
-    system_prompt=SystemMessage(
-        content=("System: You are an Agentic AI modal with calendar management, email management and web scrapping capabilities."
-        "You are task is to listen, reason, plan and execute all the tasks assigned by the user."
-        "Also you have great reasoning capabilities like when asked about an annual event where no information about the start and"
-        " the end dates are given, you assume start date as now and the end date as the date one year after today."
-        "You can answer all the questions on your own which do not require tool calling."
-        "When asked to compose an email message or draft, create the body of the email using email_content_cretion function."
-        "Once the body content of the email is generaated, use other functions to save or send the draft."
-        "After completing a task out of all the tasks assigned to you, address the user."
-        f"The current date and time is {datetime.now(ZoneInfo("Asia/Kolkata")).isoformat()}")
-    )
-    all_messages = [system_prompt,*state['messages']]
-    response = llm_with_tools.invoke(all_messages)
-    state['messages'].append(response)
-    return state
-
-tool_node = ToolNode(tools=Tools)
-
-def should_continue(state:AgentState):
-    """Determine if we have more work to do or should end the conversation."""
-    last_message = state["messages"][-1]
-    if not last_message.tool_calls:
-        print(last_message.text)
-        return "end"
-    else:
-        return "continue"
-
-# _____GRAPH STRUCTURE______ #
-graph = StateGraph(AgentState)
-graph.add_node("senses",ask_anything)
-graph.add_node("brain",reason_plan)
-graph.add_node("tools",tool_node)
-graph.set_entry_point("senses")
-graph.add_edge("senses","brain")
-graph.add_conditional_edges(
-    "brain",
-    should_continue,
-    {
-        "continue": "tools",
-        "end": "senses"
-    }
+# One subagent model handles multiple tasks concurrently
+calendar_agent = create_agent(
+    model,
+    tools=CALENDAR_TOOLS,
+    system_prompt=CALENDAR_AGENT_PROMPT,
 )
-graph.add_edge("tools","brain")
-app = graph.compile()
 
+email_agent = create_agent(
+    model,
+    tools=EMAIL_TOOLS,
+    system_prompt=EMAIL_AGENT_PROMPT,
+)
 
-# ______LOOP_ENGINE______ #
-state = {"messages":[]}
+codeforces_agent = create_agent(
+    model,
+    tools=CODEFORCES_TOOLS,
+    system_prompt=CODEFORCES_AGENT_PROMPT
+)
 
-for full_state in app.stream(state, stream_mode="values"):
-    print(f"Total messages so far: {len(full_state['messages'])}")
+general_agent = create_agent(
+    model,
+    system_prompt=GENERAL_AGENT_PROMPT
+)
+# ------------------------------------------------------ #
+# Mend the supervisor agent using groq for speed and efficiency
+supervisor_model = init_chat_model("meta-llama/llama-4-scout-17b-16e-instruct", model_provider="groq", temperature=0.7)
+# Force llm to output strictly in the ExeccutionPlan format
+supervisor_agent = supervisor_model.with_structured_output(TaskBatch) 
+
+# ------------------------------------------------------ #
+# Nodes of the graph
+def supervisor_node(state: AgentState):
+    print(f"Batch Index: {state['current_batch_index']}")
+    system_msg = SystemMessage(content=SUPERVISOR_PROMPT)
+    if state["current_batch_index"] == 0:
+        messages_for_supervisor = [system_msg] + state["messages"]
+    else:
+        messages_for_supervisor = [system_msg] + state["messages"] + state.get("task_results", [])
+    plan: TaskBatch = supervisor_agent.invoke(messages_for_supervisor)
+    print(plan)
+    if not plan.tasks:
+        return {"plan": plan} 
+    if plan.tasks[0].target_agent == "End":
+        task_results = state.get("task_results", [])
+        if task_results:
+            final_response = task_results[-1]
+        else:
+            final_response = HumanMessage(content="No tasks were executed, workflow ended.")
+        return{
+            "plan": plan, 
+            "messages": [final_response],
+            "current_batch_index": state["current_batch_index"] + 1
+        }
+    else:
+        return{
+            "plan": plan, 
+            "task_results": "cls",
+            "current_batch_index": state["current_batch_index"] + 1
+        }
+
+def router_node(state: AgentState):
+    plan = state.get("plan")
+    if not plan or not plan.tasks or plan.tasks[0].target_agent == "End":
+        return END
+    return [Send("Worker", task) for task in plan.tasks]
+
+def worker_node(task: Task):
+    if task.target_agent == "Calendar":
+        result = calendar_agent.invoke({"messages": [("user", task.instruction)]})
+    elif task.target_agent == "Email":
+        result = email_agent.invoke({"messages": [("user", task.instruction)]})
+    elif task.target_agent == "Codeforces":
+        result = codeforces_agent.invoke({"messages": [("user", task.instruction)]})
+    else:
+        result = general_agent.invoke({"messages": [("user", task.instruction)]})
+    final_agent_response = result['messages'][-1].content
+    report_message = HumanMessage(
+        content=f"Report from {task.target_agent} Agent:{final_agent_response}",
+        name=task.target_agent
+    )
+    AI_command:str = AIMessage(
+        content=f"Task given to {task.target_agent} Task:{task.instruction}",
+        name="Supervisor Agent"
+    )
+    return {
+        "messages": [AI_command],
+        "task_results": [report_message]
+    }
+# ----------------------------------------------------- #
+# Build the graph
+graph = StateGraph(AgentState)
+
+graph.add_node("Supervisor",supervisor_node)
+graph.add_node("Worker",worker_node)
+# ------------------------------------------------------ #
+# Edges of the graph
+graph.add_edge(START,"Supervisor")
+graph.add_conditional_edges("Supervisor",router_node)
+graph.add_edge("Worker","Supervisor")
+# ------------------------------------------------------ #
+# Compiled graph
+serializer = JsonPlusSerializer(allowed_msgpack_modules='messages')
+memory = MemorySaver(serde=serializer) # Saves state to RAM
+agent_exe_graph = graph.compile(checkpointer=memory)
