@@ -6,14 +6,14 @@ import operator
 Message = Union[HumanMessage, AIMessage, ToolMessage, SystemMessage]
 
 # Define a custom reducer function
-def manage_list(existing:List[Any],new:Union[List[Any],Any,str]):
-    if new=="cls": # Command clears the messages
+def manage_list(existing: List[Any], new: Union[List[Any], Any, str]):
+    if new == "cls": # Command clears the messages
         return []
     if not new: # If nothing to add
         return existing
-    if isinstance(new,list): # If new is a list
-        return existing+new
-    return existing+[new] # If new is a string
+    if isinstance(new, list): # If new is a list
+        return existing + new
+    return existing + [new] # If new is a single message
 
 # Define a single task for a sub-agent
 class Task(BaseModel):
@@ -31,4 +31,5 @@ class AgentState(TypedDict):
     messages: Annotated[list[Message], operator.add]
     plan: TaskBatch
     current_batch_index: int
-    task_results: Annotated[list[ToolMessage], manage_list]
+    # CHANGED: list[ToolMessage] -> list[Message] to accept AIMessages from workers
+    task_results: Annotated[list[Message], manage_list]

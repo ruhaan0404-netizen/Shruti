@@ -2,6 +2,7 @@ from langgraph.graph import StateGraph, START, END
 from langchain.messages import SystemMessage, HumanMessage, AIMessage
 from agentstate import AgentState, Task, TaskBatch
 from dotenv import load_dotenv
+from langchain.tools import tool
 from langchain.chat_models import init_chat_model
 from langchain.agents import create_agent
 from langgraph.checkpoint.serde.jsonplus import JsonPlusSerializer
@@ -15,9 +16,17 @@ from langgraph.types import Send
 
 load_dotenv() # Load the environment variables(API keys, other parameters)
 
+@tool
+def tell_the_user(response:str):
+    """This function helps you address the user.Pass your reply as the argument response to the user."""
+    from interact import speak_response
+    import asyncio
+    asyncio.run(speak_response(response))
+    return "Successfully addressed the user."
+
 # ----------------------------------------------------- #
 # Use gemini for tool calling and subagent execution
-model = init_chat_model("gemini-2.5-flash",model_provider="google_genai", temperature=0.7) # Initialising the subagent model.
+model = init_chat_model("meta-llama/llama-4-scout-17b-16e-instruct", model_provider="groq", temperature=0.7) # Initialising the subagent model.
 
 # One subagent model handles multiple tasks concurrently
 calendar_agent = create_agent(
@@ -40,43 +49,59 @@ codeforces_agent = create_agent(
 
 general_agent = create_agent(
     model,
+    tools=[tell_the_user],
     system_prompt=GENERAL_AGENT_PROMPT
 )
 # ------------------------------------------------------ #
 # Mend the supervisor agent using groq for speed and efficiency
-supervisor_model = init_chat_model("meta-llama/llama-4-scout-17b-16e-instruct", model_provider="groq", temperature=0.7)
+supervisor_model = init_chat_model("openai/gpt-oss-120b", model_provider="groq", temperature=0.7)
 # Force llm to output strictly in the ExeccutionPlan format
 supervisor_agent = supervisor_model.with_structured_output(TaskBatch) 
-
 # ------------------------------------------------------ #
 # Nodes of the graph
 def supervisor_node(state: AgentState):
-    print(f"Batch Index: {state['current_batch_index']}")
-    system_msg = SystemMessage(content=SUPERVISOR_PROMPT)
-    if state["current_batch_index"] == 0:
-        messages_for_supervisor = [system_msg] + state["messages"]
-    else:
-        messages_for_supervisor = [system_msg] + state["messages"] + state.get("task_results", [])
+    current_index = state.get("current_batch_index", 0)
+    print(f"Batch Index: {current_index}")
+    
+    # 1. Fix Amnesia: Inject a strict memory directive into the system prompt
+    memory_directive = (
+        "CRITICAL DIRECTIVE: Read the message history carefully. "
+        "If a worker agent just reported that they successfully completed a task "
+        "(e.g., 'Draft created successfully'), DO NOT assign that exact task again. "
+        "If the user's overall goal is met, your next target_agent MUST be 'End'."
+    )
+    system_msg = SystemMessage(content=SUPERVISOR_PROMPT + memory_directive)
+    
+    # 2. Fix Duplication: Compile history cleanly
+    # We combine the system message, main history, and the latest worker reports
+    messages_for_supervisor = [system_msg] + state["messages"]
+    if "task_results" in state and state["task_results"]:
+        messages_for_supervisor += state["task_results"]
+        
+    print(messages_for_supervisor)
+
     plan: TaskBatch = supervisor_agent.invoke(messages_for_supervisor)
-    print(plan)
-    if not plan.tasks:
-        return {"plan": plan} 
-    if plan.tasks[0].target_agent == "End":
+    print(f"Supervisor Plan: {plan}")
+    
+    # 3. Handle Workflow Completion
+    if not plan or not plan.tasks or plan.tasks[0].target_agent == "End":
         task_results = state.get("task_results", [])
-        if task_results:
-            final_response = task_results[-1]
-        else:
-            final_response = HumanMessage(content="No tasks were executed, workflow ended.")
-        return{
+        final_response = task_results[-1] if task_results else HumanMessage(content="Workflow ended.")
+        
+        return {
             "plan": plan, 
             "messages": [final_response],
-            "current_batch_index": state["current_batch_index"] + 1
+            "task_results": [], 
+            "current_batch_index": current_index + 1
         }
+        
+    # 4. Handle Ongoing Execution
     else:
-        return{
+        return {
             "plan": plan, 
-            "task_results": "cls",
-            "current_batch_index": state["current_batch_index"] + 1
+            # FIX: Use [] to clear lists safely, NEVER the string "cls"
+            "task_results": [], 
+            "current_batch_index": current_index + 1
         }
 
 def router_node(state: AgentState):
@@ -96,15 +121,17 @@ def worker_node(task: Task):
         result = general_agent.invoke({"messages": [("user", task.instruction)]})
     final_agent_response = result['messages'][-1].content
     report_message = HumanMessage(
-        content=f"Report from {task.target_agent} Agent:{final_agent_response}",
+        content=f"Report from {task.target_agent} Agent: {final_agent_response}",
         name=task.target_agent
     )
-    AI_command:str = AIMessage(
-        content=f"Task given to {task.target_agent} Task:{task.instruction}",
-        name="Supervisor Agent"
+    AI_command = AIMessage(
+        content=f"Task given to {task.target_agent} Task: {task.instruction}",
+        name="Supervisor"
     )
+    
     return {
-        "messages": [AI_command],
+        # Appending both to 'messages' gives the supervisor permanent memory of the action
+        "messages": [AI_command, report_message],
         "task_results": [report_message]
     }
 # ----------------------------------------------------- #

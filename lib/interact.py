@@ -1,5 +1,13 @@
 import os
 import io
+import sys
+
+# --- PREVENT THE DUAL-MODULE TRAP ---
+# Force Python to recognize this running script as 'interact'
+# BEFORE importing agent_core or anything else that imports interact.
+sys.modules['interact'] = sys.modules[__name__]
+import os
+import io
 import threading
 import keyboard
 import torch
@@ -19,8 +27,10 @@ from langchain.messages import HumanMessage
 
 load_dotenv()
 
+MAIN_LOOP = None
+
 # --- 1. INITIALIZATION ---
-raw_key = os.getenv("GQ_API_KEY")
+raw_key = os.getenv("GROQ_API_KEY")
 if not raw_key:
     raise ValueError("❌ GQ_API_KEY is missing from .env!")
 
@@ -45,14 +55,17 @@ connected_clients = set()
 
 
 # --- 2. WEBSOCKET BROADCASTER ---
-async def broadcast_state(status, message=""):
+async def broadcast_state(status, message="", draft_text=""):
     """Shoots a JSON message to Flutter instantly"""
     if not connected_clients:
         return
         
-    payload = json.dumps({"status": status, "message": message})
+    payload = json.dumps({
+        "status": status, 
+        "message": message,
+        "draft_text": draft_text # Added this line
+    })
     
-    # Send to all connected UIs simultaneously
     tasks = [asyncio.create_task(client_ws.send(payload)) for client_ws in connected_clients]
     if tasks:
         await asyncio.gather(*tasks)
@@ -165,7 +178,7 @@ async def process_voice_command():
             )
             
             result_text = transcription.strip()
-            graph_inputs = {"messages": [HumanMessage(content=result_text)]} # Append user's message
+            graph_inputs = {"messages": [HumanMessage(content=result_text)],"current_batch_index":0} # Append user's message
             graph_config = {"configurable": {"thread_id": "voice_session_001"}} # Assign it a unique thread_id
 
             final_state = await agent_exe_graph.ainvoke(graph_inputs, config=graph_config) # Invoke the graph(asynchronously)
@@ -202,7 +215,8 @@ async def websocket_handler(websocket):
 
 async def main():
     loop = asyncio.get_running_loop()
-    
+    global MAIN_LOOP
+    MAIN_LOOP = loop
     # Bind the hotkey to trigger the async process safely
     def hotkey_pressed():
         print("⌨️ Mic triggered from Keyboard Hotkey!")

@@ -35,6 +35,8 @@ class _ChitraHomeScreenState extends State<ChitraHomeScreen>
   late WebSocketChannel _channel;
   String _status = 'idle';
   String _message = 'Namaste. Press Ctrl+Shift+Space to speak.';
+  bool _showDraftPanel = false;
+  String _draftContent = "";
 
   late AnimationController _pulseController;
   late AnimationController _spinController;
@@ -63,9 +65,18 @@ class _ChitraHomeScreenState extends State<ChitraHomeScreen>
       _channel.stream.listen(
         (message) {
           final Map<String, dynamic> data = jsonDecode(message);
+          print("🟡 WEBSOCKET PAYLOAD: $data");
           setState(() {
             _status = data['status'] ?? 'idle';
             _message = data['message'] ?? '';
+
+            // --- NEW LOGIC ---
+            if (_status == 'draft_review') {
+              _showDraftPanel = true;
+              _draftContent = data['draft_text'] ?? '';
+            } else if (_status == 'success' || _status == 'idle') {
+              _showDraftPanel = false;
+            }
           });
         },
         onError: (error) {
@@ -193,6 +204,111 @@ class _ChitraHomeScreenState extends State<ChitraHomeScreen>
           ),
         );
     }
+  }
+
+  Widget _buildDraftPanel() {
+    return AnimatedPositioned(
+      duration: const Duration(milliseconds: 400),
+      curve: Curves.easeOutQuart,
+      // Slide in from the left, or hide completely off-screen
+      left: _showDraftPanel ? 40 : -450,
+      top: 80,
+      bottom: 80,
+      width: 400,
+      child: ClipRRect(
+        borderRadius: BorderRadius.circular(24),
+        child: BackdropFilter(
+          filter: ImageFilter.blur(sigmaX: 15, sigmaY: 15),
+          child: Container(
+            padding: const EdgeInsets.all(24),
+            decoration: BoxDecoration(
+              color: Colors.white.withValues(alpha: 0.7),
+              borderRadius: BorderRadius.circular(24),
+              border: Border.all(
+                color: const Color(0xFFFF8F00).withValues(alpha: 0.5),
+                width: 2,
+              ),
+              boxShadow: [
+                BoxShadow(
+                  color: Colors.black.withValues(alpha: 0.1),
+                  blurRadius: 20,
+                  offset: const Offset(5, 5),
+                ),
+              ],
+            ),
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                const Text(
+                  "DRAFT REVIEW",
+                  style: TextStyle(
+                    fontSize: 14,
+                    letterSpacing: 2,
+                    fontWeight: FontWeight.bold,
+                    color: Color(0xFFFF8F00),
+                  ),
+                ),
+                const SizedBox(height: 16),
+                Expanded(
+                  child: SingleChildScrollView(
+                    child: Text(
+                      _draftContent,
+                      style: const TextStyle(
+                        fontSize: 16,
+                        height: 1.5,
+                        color: Color(0xFF424242),
+                      ),
+                    ),
+                  ),
+                ),
+                const SizedBox(height: 16),
+                // Action Buttons
+                Row(
+                  children: [
+                    Expanded(
+                      child: OutlinedButton(
+                        onPressed: () {
+                          // Hide panel and tell Python the user wants changes
+                          setState(() => _showDraftPanel = false);
+                          _channel.sink.add(
+                            jsonEncode({"command": "revise_draft"}),
+                          );
+                          _triggerMicRemotely(); // Auto-open mic to hear changes
+                        },
+                        style: OutlinedButton.styleFrom(
+                          foregroundColor: const Color(0xFFFF8F00),
+                          side: const BorderSide(color: Color(0xFFFF8F00)),
+                          padding: const EdgeInsets.symmetric(vertical: 16),
+                        ),
+                        child: const Text("Revise"),
+                      ),
+                    ),
+                    const SizedBox(width: 12),
+                    Expanded(
+                      child: ElevatedButton(
+                        onPressed: () {
+                          // Hide panel and tell Python to send the email
+                          setState(() => _showDraftPanel = false);
+                          _channel.sink.add(
+                            jsonEncode({"command": "approve_draft"}),
+                          );
+                        },
+                        style: ElevatedButton.styleFrom(
+                          backgroundColor: const Color(0xFFFF8F00),
+                          foregroundColor: Colors.white,
+                          padding: const EdgeInsets.symmetric(vertical: 16),
+                        ),
+                        child: const Text("Approve & Send"),
+                      ),
+                    ),
+                  ],
+                ),
+              ],
+            ),
+          ),
+        ),
+      ),
+    );
   }
 
   @override
@@ -331,6 +447,7 @@ class _ChitraHomeScreenState extends State<ChitraHomeScreen>
                 ),
               ),
             ),
+            _buildDraftPanel(),
           ],
         ),
       ),
