@@ -1,13 +1,8 @@
 import os
 import io
 import sys
-
-# --- PREVENT THE DUAL-MODULE TRAP ---
-# Force Python to recognize this running script as 'interact'
-# BEFORE importing agent_core or anything else that imports interact.
+import httpx
 sys.modules['interact'] = sys.modules[__name__]
-import os
-import io
 import threading
 import keyboard
 import torch
@@ -24,10 +19,33 @@ import sounddevice as sd
 from silero_vad import load_silero_vad
 from agent_core import agent_exe_graph
 from langchain.messages import HumanMessage
+from qdrant_client import QdrantClient
+from qdrant_client.models import Distance, VectorParams
+
 
 load_dotenv()
 
 MAIN_LOOP = None
+
+
+client = QdrantClient(
+    url=os.getenv("NODE"),
+    api_key=os.getenv("CLOUD_CLUSTER"),
+    cloud_inference=True,
+    https=True,
+    prefer_grpc=False,
+    check_compatibility=False
+)
+
+def create_collection(collection_name="coding_questions"):
+    if client.collection_exists(collection_name):
+            print(f"Collection '{collection_name}' already exists. Skipping creation.")
+    else:
+        client.create_collection(
+            collection_name=collection_name,
+            vectors_config=VectorParams(size=3072, distance=Distance.COSINE),
+        )
+        print(f"Collection '{collection_name}' created successfully for the first time!")
 
 # --- 1. INITIALIZATION ---
 raw_key = os.getenv("GROQ_API_KEY")
@@ -213,6 +231,31 @@ async def websocket_handler(websocket):
     finally:
         connected_clients.remove(websocket)
 
+async def fetch_codeforces_history_loop():
+    """Runs in the background, fetching Codeforces history every 30 mins."""
+    async with httpx.AsyncClient() as client:
+        while True:
+            try:
+                # MUST await the network request
+                response = await client.get("https://codeforces.com/api/user.status?handle=Itu_Talishman&from=1&count=30")
+                
+                # The API returns raw JSON, so we skip BeautifulSoup entirely
+                data = response.json()
+                
+                if data.get("status") == "OK":
+                    relevant = data['result']
+                    with open("recent_submission.json", "w") as f:
+                        json.dump(relevant, f, indent=1)
+                    print("✅ Codeforces submission history updated.")
+                else:
+                    print(f"⚠️ API returned non-OK status: {data.get('comment')}")
+                    
+            except Exception as e:
+                print(f"❌ Failed to fetch Codeforces history: {e}")
+                
+            # MUST await the sleep
+            await asyncio.sleep(180)
+
 async def main():
     loop = asyncio.get_running_loop()
     global MAIN_LOOP
@@ -225,6 +268,9 @@ async def main():
     # Note: add_hotkey runs in the background and doesn't block!
     keyboard.add_hotkey('ctrl+shift+space', hotkey_pressed)
     
+    create_collection()
+    background_task = asyncio.create_task(fetch_codeforces_history_loop())
+
     print("\n🚀 Starting WebSocket Server on ws://localhost:8765")
     print("👉 Press \"Ctrl+Shift+Space\" to speak, or connect the Flutter app.")
     

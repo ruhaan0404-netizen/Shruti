@@ -11,7 +11,6 @@ from tools.calendar_tool import CALENDAR_TOOLS
 from tools.email_tool import EMAIL_TOOLS
 from tools.codeforces_tool import CODEFORCES_TOOLS
 from langgraph.checkpoint.memory import MemorySaver
-from langgraph.graph import END
 from langgraph.types import Send
 
 load_dotenv() # Load the environment variables(API keys, other parameters)
@@ -94,7 +93,6 @@ def supervisor_node(state: AgentState):
             "task_results": [], 
             "current_batch_index": current_index + 1
         }
-        
     # 4. Handle Ongoing Execution
     else:
         return {
