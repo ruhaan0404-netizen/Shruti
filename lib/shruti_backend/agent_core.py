@@ -1,15 +1,15 @@
 from langgraph.graph import StateGraph, START, END
 from langchain.messages import SystemMessage, HumanMessage, AIMessage
-from lib.shruti_backend.agentstate import AgentState, Task, TaskBatch
+from agentstate import AgentState, Task, TaskBatch
 from dotenv import load_dotenv
 from langchain.tools import tool
 from langchain.chat_models import init_chat_model
 from langchain.agents import create_agent
 from langgraph.checkpoint.serde.jsonplus import JsonPlusSerializer
-from lib.shruti_backend.prompt import  SUPERVISOR_PROMPT, CALENDAR_AGENT_PROMPT, EMAIL_AGENT_PROMPT, CODEFORCES_AGENT_PROMPT, GENERAL_AGENT_PROMPT
-from tools.calendar_tool import CALENDAR_TOOLS
-from tools.email_tool import EMAIL_TOOLS
-from tools.codeforces_tool import CODEFORCES_TOOLS
+from prompt import SUPERVISOR_PROMPT, CALENDAR_AGENT_PROMPT, EMAIL_AGENT_PROMPT, CODEFORCES_AGENT_PROMPT, GENERAL_AGENT_PROMPT
+from lib.shruti_backend.tools.calendar_tool import CALENDAR_TOOLS
+from lib.shruti_backend.tools.email_tool import EMAIL_TOOLS
+from lib.shruti_backend.tools.codeforces_tool import CODEFORCES_TOOLS
 from langgraph.checkpoint.memory import MemorySaver
 from langgraph.types import Send
 

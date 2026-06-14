@@ -11,6 +11,8 @@ from qdrant_client import QdrantClient
 
 load_dotenv()
 
+memory_path = r"C:\Users\Rishav\Jarvis\lib\memory"
+
 qdrant_client = QdrantClient(
     url=os.getenv("NODE"),
     api_key=os.getenv("CLOUD_CLUSTER"),
@@ -111,7 +113,7 @@ def ask_user(question: str) -> str:
 def upload_question(model_summary: str) -> str:
     """Uploads a specific question and its AI-generated solution to the cloud database."""
     try:
-        folder = Path("C:\\Users\\Rishav\\Jarvis\\lib\\memory")
+        folder = Path(memory_path)
         file = folder/"recent_submission.json"
         with open(file, "r", encoding="utf-8") as f:
             diction = json.load(f)
@@ -124,7 +126,7 @@ def upload_question(model_summary: str) -> str:
 @tool
 def latest_solved_question():
     """Returns the latest submitted question which the user solved successfully."""
-    folder = Path("C:\\Users\\Rishav\\Jarvis\\lib\\memory")
+    folder = Path(memory_path)
     file = folder/"recent_submission.json"
     try:
         with open(file,"r") as f:
@@ -153,14 +155,14 @@ def ask_codeforces(codeforces_url: str, contest_id: int = None):
         main_text = children_divs[1].get_text(separator=" ", strip=True) if len(children_divs) > 1 else ""
         diction = {
             "metadata": {
-                "title": problem_part.find("div", class_="title").get_text(strip=True),
+                "title": problem_part.find("div", class_="title").decode(indent_level=1,encoding='utf-8'),
                 "time_limit": problem_part.find("div", class_="time-limit").get_text(" ", strip=True).replace("time limit per test ", ""),
                 "output": problem_part.find("div", class_="output-specification").get_text(separator=" ", strip=True)
             },
             "problem": main_text,
             "solution": ""
         }
-        folder=Path("C:\\Users\\Rishav\\Jarvis\\lib\\memory")
+        folder=Path(memory_path)
         file = folder/"specific_question.json"
         with open(file, "w", encoding="utf-8") as f:
             json.dump(diction, f, indent=4)

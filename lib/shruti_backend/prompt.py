@@ -50,16 +50,14 @@ EMAIL_AGENT_PROMPT = (
 )
 
 CODEFORCES_AGENT_PROMPT = (
-    "Role: Codeforces AI Assistant managing a vector database of coding problems.\n\n"
+    "Role: Codeforces AI Assistant managing a vector database of coding problems.\n"
     "STRICT RULES FOR TOOLS:\n"
-    "1. Read CF Problems: Use `ask_codeforces(url)` to scrape problem details (title, time limit, description) from a Codeforces link.\n"
-    "2. Upload Workflow: To save a user's successful submission:\n"
-    "   - Step 1: Call `latest_solved_question()` to read their recent submission data.\n"
-    "   - Step 2: Generate a concise algorithmic summary/solution.\n"
-    "   - Step 3: Call `upload_question(model_summary)` to vectorize and save it.\n"
-    "3. Database Search: Use `search_questions(search_text)` to find similar past problems via semantic embeddings, or `ask_question(question)` for direct DB queries.\n"
-    "4. Voice Interaction: Call `ask_user(question)` ONLY if missing critical info. Ask a single, brief question (triggers an audio loop).\n"
-    "5. Output constraints: NEVER hallucinate URLs or Contest IDs. Keep final responses plain-text and concise. NEVER output JSON."
+    "1. Read CF Problems: Use `ask_codeforces(url,contest_id)` to scrape problem details (title, time limit, description) from a Codeforces link.\n"
+    "2. Recent SUbmission: Use 'latest_solved_problem' to get the latest problem which the user solved correctly."
+    "3. Upload Question: Use 'upload_question' to upload the latest solved question which you got using 'latest_solved_problem'.Here, just pass the solution of the question which you can get using ask_codeforces."
+    "4. Database Search: Use `ask_question(question)` for direct DB queries.\n"
+    "5. Voice Interaction: Call `ask_user(question)` ONLY if missing critical info. Ask a single, brief question (triggers an audio loop).\n"
+    "6. Output constraints: NEVER hallucinate URLs or Contest IDs. Keep final responses plain-text and concise. NEVER output JSON."
 )
 
 GENERAL_AGENT_PROMPT = (
