@@ -379,7 +379,7 @@ class _ChitraHomeScreenState extends State<ChitraHomeScreen>
                   children: [
                     // Header
                     const Text(
-                      'CHITRA',
+                      'SHRUTI',
                       style: TextStyle(
                         fontSize: 50,
                         fontFamily: 'Samarkan', // Uses your new custom font

@@ -12,6 +12,7 @@ import websockets
 import json
 import edge_tts
 import pygame
+from pathlib import Path
 from dotenv import load_dotenv
 from scipy.io import wavfile
 from groq import Groq
@@ -19,33 +20,12 @@ import sounddevice as sd
 from silero_vad import load_silero_vad
 from agent_core import agent_exe_graph
 from langchain.messages import HumanMessage
-from qdrant_client import QdrantClient
+from tools.codeforces_tool import qdrant_client
 from qdrant_client.models import Distance, VectorParams
-
 
 load_dotenv()
 
 MAIN_LOOP = None
-
-
-client = QdrantClient(
-    url=os.getenv("NODE"),
-    api_key=os.getenv("CLOUD_CLUSTER"),
-    cloud_inference=True,
-    https=True,
-    prefer_grpc=False,
-    check_compatibility=False
-)
-
-def create_collection(collection_name="coding_questions"):
-    if client.collection_exists(collection_name):
-            print(f"Collection '{collection_name}' already exists. Skipping creation.")
-    else:
-        client.create_collection(
-            collection_name=collection_name,
-            vectors_config=VectorParams(size=3072, distance=Distance.COSINE),
-        )
-        print(f"Collection '{collection_name}' created successfully for the first time!")
 
 # --- 1. INITIALIZATION ---
 raw_key = os.getenv("GROQ_API_KEY")
@@ -71,7 +51,6 @@ audio_buffer = []
 # Global set to hold our connected Flutter clients
 connected_clients = set()
 
-
 # --- 2. WEBSOCKET BROADCASTER ---
 async def broadcast_state(status, message="", draft_text=""):
     """Shoots a JSON message to Flutter instantly"""
@@ -81,7 +60,7 @@ async def broadcast_state(status, message="", draft_text=""):
     payload = json.dumps({
         "status": status, 
         "message": message,
-        "draft_text": draft_text # Added this line
+        "draft_text": draft_text
     })
     
     tasks = [asyncio.create_task(client_ws.send(payload)) for client_ws in connected_clients]
@@ -131,11 +110,7 @@ async def speak_response(text: str):
     and plays it immediately without writing to disk.
     """
     voice = "en-US-AvaNeural"
-    
-    # 1. Initialize edge_tts communication
     communicate = edge_tts.Communicate(text, voice)
-    
-    # 2. Stream audio bytes directly into an in-memory buffer
     audio_buffer = io.BytesIO()
     try:
         async for chunk in communicate.stream():
@@ -144,27 +119,19 @@ async def speak_response(text: str):
     except Exception as e:
         print(f"❌ Error streaming TTS: {e}")
         return
-
-    # 3. Rewind the pointer of the buffer to the beginning
     audio_buffer.seek(0)
-    
-    # 4. Play the audio using Pygame from memory
     if not pygame.mixer.get_init():
         pygame.mixer.init()
         
     try:
-        # Pygame's music.load() safely accepts a file-like object like BytesIO
         pygame.mixer.music.load(audio_buffer)
         pygame.mixer.music.play()
-        
-        # Keep the loop alive while audio plays
         while pygame.mixer.music.get_busy():
             await asyncio.sleep(0.1)
             
     except Exception as e:
         print(f"❌ Playback error: {e}")
     finally:
-        # 5. Cleanup memory
         pygame.mixer.music.unload()
         audio_buffer.close()
         print("✅ Finished speaking!")
@@ -172,21 +139,14 @@ async def speak_response(text: str):
 # --- 4. THE ASYNC AGENT LOGIC ---
 async def process_voice_command():
     """Handles the UI updates, transcription, and Groq API calls"""
-    # 1. Tell Flutter we are listening!
     await broadcast_state("listening", "Listening...")
-    
-    # 2. Run the microphone in a separate thread so it doesn't freeze the websocket
     await asyncio.to_thread(listen)
-    
     if audio_buffer:
-        # 3. Tell Flutter we are thinking!
         await broadcast_state("transcribing", "Thinking...")
-        
         final_audio = np.concatenate(audio_buffer, axis=0).flatten()
         virtual_file = io.BytesIO()
         wavfile.write(virtual_file, SAMPLE_RATE, final_audio)
         virtual_file.seek(0)
-        
         try:
             transcription = client.audio.transcriptions.create(
                 file=("audio.wav", virtual_file.read()), 
@@ -194,38 +154,30 @@ async def process_voice_command():
                 response_format="text",
                 temperature=0.0
             )
-            
             result_text = transcription.strip()
-            graph_inputs = {"messages": [HumanMessage(content=result_text)],"current_batch_index":0} # Append user's message
-            graph_config = {"configurable": {"thread_id": "voice_session_001"}} # Assign it a unique thread_id
-
-            final_state = await agent_exe_graph.ainvoke(graph_inputs, config=graph_config) # Invoke the graph(asynchronously)
-            agent_response = final_state["messages"][-1].content # Access the final message appended to the langgraph agentstate
-
-            await speak_response(agent_response) # TTS Model speaks the result
-            await broadcast_state("success", agent_response) # Result sent to Flutter frontend
-            
+            graph_inputs = {"messages": [HumanMessage(content=result_text)],"current_batch_index":0}
+            graph_config = {"configurable": {"thread_id": "voice_session_001"}}
+            final_state = await agent_exe_graph.ainvoke(graph_inputs, config=graph_config)
+            agent_response = final_state["messages"][-1].content
+            await speak_response(agent_response)
+            await broadcast_state("success", agent_response)
         except Exception as e:
             print(f"❌ Cloud transcription failed: {e}")
             await broadcast_state("error", "Failed to connect to cloud.")
     else:
         await broadcast_state("idle", "No speech detected.")
 
-
 # --- 5. SERVER & EVENT LOOP ---
 async def websocket_handler(websocket):
     """Manages incoming connections from Flutter"""
     print("📱 Flutter UI Connected!")
-    connected_clients.add(websocket)
-    
+    connected_clients.add(websocket)   
     try:
-        # We can also receive messages FROM Flutter (like a manual button click)
         async for message in websocket:
             data = json.loads(message)
             if data.get("command") == "start_mic":
                 print("🎤 Mic triggered from Flutter UI!")
-                asyncio.create_task(process_voice_command())
-                
+                asyncio.create_task(process_voice_command())              
     except websockets.exceptions.ConnectionClosed:
         print("📱 Flutter UI Disconnected.")
     finally:
@@ -236,49 +188,48 @@ async def fetch_codeforces_history_loop():
     async with httpx.AsyncClient() as client:
         while True:
             try:
-                # MUST await the network request
                 response = await client.get("https://codeforces.com/api/user.status?handle=Itu_Talishman&from=1&count=30")
-                
-                # The API returns raw JSON, so we skip BeautifulSoup entirely
                 data = response.json()
-                
                 if data.get("status") == "OK":
-                    relevant = data['result']
-                    with open("recent_submission.json", "w") as f:
+                    all = data['result']
+                    relevant = [item for item in all if item["verdict"]=="OK"]
+                    folder = Path("C:\\Users\\Rishav\\Jarvis\\lib\\memory")
+                    folder.mkdir(parents=True, exist_ok=True)
+                    file = folder/"recent_submission.json"
+                    with open(file, "w") as f:
                         json.dump(relevant, f, indent=1)
                     print("✅ Codeforces submission history updated.")
                 else:
-                    print(f"⚠️ API returned non-OK status: {data.get('comment')}")
-                    
+                    print(f"⚠️ API returned non-OK status: {data.get('comment')}") 
             except Exception as e:
                 print(f"❌ Failed to fetch Codeforces history: {e}")
-                
-            # MUST await the sleep
             await asyncio.sleep(180)
+
+def create_collection(collection_name="coding_questions"):
+    if qdrant_client.collection_exists(collection_name):
+            print(f"Collection '{collection_name}' already exists. Skipping creation.")
+    else:
+        qdrant_client.create_collection(
+            collection_name=collection_name,
+            vectors_config=VectorParams(size=3072, distance=Distance.COSINE),
+        )
+        print(f"Collection '{collection_name}' created successfully for the first time!")
+
 
 async def main():
     loop = asyncio.get_running_loop()
     global MAIN_LOOP
     MAIN_LOOP = loop
-    # Bind the hotkey to trigger the async process safely
     def hotkey_pressed():
         print("⌨️ Mic triggered from Keyboard Hotkey!")
         asyncio.run_coroutine_threadsafe(process_voice_command(), loop)
-
-    # Note: add_hotkey runs in the background and doesn't block!
     keyboard.add_hotkey('ctrl+shift+space', hotkey_pressed)
-    
     create_collection()
     background_task = asyncio.create_task(fetch_codeforces_history_loop())
-
     print("\n🚀 Starting WebSocket Server on ws://localhost:8765")
     print("👉 Press \"Ctrl+Shift+Space\" to speak, or connect the Flutter app.")
-    
-    # Start the server
     async with websockets.serve(websocket_handler, "localhost", 8765):
-        # Keep the program running forever
         await asyncio.Future()
 
-if __name__ == "__main__":
-    # Run the main async loop
-    asyncio.run(main())
+
+asyncio.run(main())

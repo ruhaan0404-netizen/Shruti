@@ -1,0 +1,407 @@
+[
+ {
+  "id": 377944630,
+  "contestId": 2233,
+  "creationTimeSeconds": 1781017530,
+  "relativeTimeSeconds": 1830,
+  "problem": {
+   "contestId": 2233,
+   "index": "B",
+   "name": "Different Distances",
+   "type": "PROGRAMMING",
+   "rating": 900,
+   "tags": [
+    "constructive algorithms"
+   ]
+  },
+  "author": {
+   "contestId": 2233,
+   "participantId": 238484688,
+   "members": [
+    {
+     "handle": "Itu_Talishman"
+    }
+   ],
+   "participantType": "CONTESTANT",
+   "ghost": false,
+   "startTimeSeconds": 1781015700
+  },
+  "programmingLanguage": "C++17 (GCC 7-32)",
+  "verdict": "OK",
+  "testset": "TESTS",
+  "passedTestCount": 3,
+  "timeConsumedMillis": 46,
+  "memoryConsumedBytes": 0
+ },
+ {
+  "id": 377927784,
+  "contestId": 2233,
+  "creationTimeSeconds": 1781016392,
+  "relativeTimeSeconds": 692,
+  "problem": {
+   "contestId": 2233,
+   "index": "A",
+   "name": "AI Project Development",
+   "type": "PROGRAMMING",
+   "rating": 800,
+   "tags": [
+    "brute force",
+    "math"
+   ]
+  },
+  "author": {
+   "contestId": 2233,
+   "participantId": 238484688,
+   "members": [
+    {
+     "handle": "Itu_Talishman"
+    }
+   ],
+   "participantType": "CONTESTANT",
+   "ghost": false,
+   "startTimeSeconds": 1781015700
+  },
+  "programmingLanguage": "C++17 (GCC 7-32)",
+  "verdict": "OK",
+  "testset": "TESTS",
+  "passedTestCount": 5,
+  "timeConsumedMillis": 15,
+  "memoryConsumedBytes": 0
+ },
+ {
+  "id": 377680346,
+  "contestId": 2234,
+  "creationTimeSeconds": 1780849946,
+  "relativeTimeSeconds": 7046,
+  "problem": {
+   "contestId": 2234,
+   "index": "B",
+   "name": "Palindrome, Twelve and Two Terms",
+   "type": "PROGRAMMING",
+   "points": 750.0,
+   "rating": 800,
+   "tags": [
+    "brute force",
+    "constructive algorithms",
+    "math"
+   ]
+  },
+  "author": {
+   "contestId": 2234,
+   "participantId": 238309344,
+   "members": [
+    {
+     "handle": "Itu_Talishman"
+    }
+   ],
+   "participantType": "CONTESTANT",
+   "ghost": false,
+   "room": 522,
+   "startTimeSeconds": 1780842900
+  },
+  "programmingLanguage": "C++17 (GCC 7-32)",
+  "verdict": "OK",
+  "testset": "TESTS",
+  "passedTestCount": 4,
+  "timeConsumedMillis": 78,
+  "memoryConsumedBytes": 0
+ },
+ {
+  "id": 377618617,
+  "contestId": 2234,
+  "creationTimeSeconds": 1780843389,
+  "relativeTimeSeconds": 489,
+  "problem": {
+   "contestId": 2234,
+   "index": "A",
+   "name": "Euclid, Sequence and Two Numbers",
+   "type": "PROGRAMMING",
+   "points": 500.0,
+   "rating": 800,
+   "tags": [
+    "math",
+    "number theory",
+    "sortings"
+   ]
+  },
+  "author": {
+   "contestId": 2234,
+   "participantId": 238309344,
+   "members": [
+    {
+     "handle": "Itu_Talishman"
+    }
+   ],
+   "participantType": "CONTESTANT",
+   "ghost": false,
+   "room": 522,
+   "startTimeSeconds": 1780842900
+  },
+  "programmingLanguage": "C++17 (GCC 7-32)",
+  "verdict": "OK",
+  "testset": "TESTS",
+  "passedTestCount": 4,
+  "timeConsumedMillis": 46,
+  "memoryConsumedBytes": 0
+ },
+ {
+  "id": 376958752,
+  "contestId": 2232,
+  "creationTimeSeconds": 1780376170,
+  "relativeTimeSeconds": 2147483647,
+  "problem": {
+   "contestId": 2232,
+   "index": "C2",
+   "name": "Seating Arrangement (Hard Version)",
+   "type": "PROGRAMMING",
+   "points": 1000.0,
+   "rating": 1500,
+   "tags": [
+    "binary search",
+    "greedy",
+    "math",
+    "two pointers"
+   ]
+  },
+  "author": {
+   "contestId": 2232,
+   "participantId": 238035714,
+   "members": [
+    {
+     "handle": "Itu_Talishman"
+    }
+   ],
+   "participantType": "PRACTICE",
+   "ghost": false,
+   "startTimeSeconds": 1780151700
+  },
+  "programmingLanguage": "C++17 (GCC 7-32)",
+  "verdict": "OK",
+  "testset": "TESTS",
+  "passedTestCount": 20,
+  "timeConsumedMillis": 31,
+  "memoryConsumedBytes": 0
+ },
+ {
+  "id": 376958727,
+  "contestId": 2232,
+  "creationTimeSeconds": 1780376146,
+  "relativeTimeSeconds": 2147483647,
+  "problem": {
+   "contestId": 2232,
+   "index": "C1",
+   "name": "Seating Arrangement (Easy Version)",
+   "type": "PROGRAMMING",
+   "points": 750.0,
+   "rating": 1300,
+   "tags": [
+    "binary search",
+    "dp",
+    "greedy",
+    "two pointers"
+   ]
+  },
+  "author": {
+   "contestId": 2232,
+   "participantId": 238035714,
+   "members": [
+    {
+     "handle": "Itu_Talishman"
+    }
+   ],
+   "participantType": "PRACTICE",
+   "ghost": false,
+   "startTimeSeconds": 1780151700
+  },
+  "programmingLanguage": "C++17 (GCC 7-32)",
+  "verdict": "OK",
+  "testset": "TESTS",
+  "passedTestCount": 20,
+  "timeConsumedMillis": 46,
+  "memoryConsumedBytes": 0
+ },
+ {
+  "id": 376671488,
+  "contestId": 2232,
+  "creationTimeSeconds": 1780155153,
+  "relativeTimeSeconds": 3453,
+  "problem": {
+   "contestId": 2232,
+   "index": "B",
+   "name": "Cake Leveling",
+   "type": "PROGRAMMING",
+   "points": 1000.0,
+   "rating": 900,
+   "tags": [
+    "binary search",
+    "greedy",
+    "math"
+   ]
+  },
+  "author": {
+   "contestId": 2232,
+   "participantId": 237855591,
+   "members": [
+    {
+     "handle": "Itu_Talishman"
+    }
+   ],
+   "participantType": "CONTESTANT",
+   "ghost": false,
+   "room": 70,
+   "startTimeSeconds": 1780151700
+  },
+  "programmingLanguage": "C++17 (GCC 7-32)",
+  "verdict": "OK",
+  "testset": "TESTS",
+  "passedTestCount": 10,
+  "timeConsumedMillis": 78,
+  "memoryConsumedBytes": 0
+ },
+ {
+  "id": 376648445,
+  "contestId": 2232,
+  "creationTimeSeconds": 1780153175,
+  "relativeTimeSeconds": 1475,
+  "problem": {
+   "contestId": 2232,
+   "index": "A",
+   "name": "Convergence",
+   "type": "PROGRAMMING",
+   "points": 500.0,
+   "rating": 800,
+   "tags": [
+    "greedy",
+    "sortings"
+   ]
+  },
+  "author": {
+   "contestId": 2232,
+   "participantId": 237855591,
+   "members": [
+    {
+     "handle": "Itu_Talishman"
+    }
+   ],
+   "participantType": "CONTESTANT",
+   "ghost": false,
+   "room": 70,
+   "startTimeSeconds": 1780151700
+  },
+  "programmingLanguage": "C++17 (GCC 7-32)",
+  "verdict": "OK",
+  "testset": "TESTS",
+  "passedTestCount": 4,
+  "timeConsumedMillis": 31,
+  "memoryConsumedBytes": 0
+ },
+ {
+  "id": 376507924,
+  "contestId": 2229,
+  "creationTimeSeconds": 1780052252,
+  "relativeTimeSeconds": 2147483647,
+  "problem": {
+   "contestId": 2229,
+   "index": "C2",
+   "name": "We Be Flipping (Hard Version)",
+   "type": "PROGRAMMING",
+   "points": 1250.0,
+   "rating": 1400,
+   "tags": [
+    "constructive algorithms",
+    "dp",
+    "greedy"
+   ]
+  },
+  "author": {
+   "contestId": 2229,
+   "participantId": 237886761,
+   "members": [
+    {
+     "handle": "Itu_Talishman"
+    }
+   ],
+   "participantType": "PRACTICE",
+   "ghost": false,
+   "startTimeSeconds": 1779546900
+  },
+  "programmingLanguage": "C++17 (GCC 7-32)",
+  "verdict": "OK",
+  "testset": "TESTS",
+  "passedTestCount": 9,
+  "timeConsumedMillis": 93,
+  "memoryConsumedBytes": 0
+ },
+ {
+  "id": 376473707,
+  "contestId": 2229,
+  "creationTimeSeconds": 1780030003,
+  "relativeTimeSeconds": 2147483647,
+  "problem": {
+   "contestId": 2229,
+   "index": "C1",
+   "name": "We Be Flipping (Easy Version)",
+   "type": "PROGRAMMING",
+   "points": 750.0,
+   "rating": 900,
+   "tags": [
+    "constructive algorithms",
+    "greedy"
+   ]
+  },
+  "author": {
+   "contestId": 2229,
+   "participantId": 237886761,
+   "members": [
+    {
+     "handle": "Itu_Talishman"
+    }
+   ],
+   "participantType": "PRACTICE",
+   "ghost": false,
+   "startTimeSeconds": 1779546900
+  },
+  "programmingLanguage": "C++17 (GCC 7-32)",
+  "verdict": "OK",
+  "testset": "TESTS",
+  "passedTestCount": 9,
+  "timeConsumedMillis": 93,
+  "memoryConsumedBytes": 102400
+ },
+ {
+  "id": 376455915,
+  "contestId": 2229,
+  "creationTimeSeconds": 1780003050,
+  "relativeTimeSeconds": 2147483647,
+  "problem": {
+   "contestId": 2229,
+   "index": "B",
+   "name": "Absolute Cinema",
+   "type": "PROGRAMMING",
+   "points": 750.0,
+   "rating": 800,
+   "tags": [
+    "greedy",
+    "math"
+   ]
+  },
+  "author": {
+   "contestId": 2229,
+   "participantId": 237886761,
+   "members": [
+    {
+     "handle": "Itu_Talishman"
+    }
+   ],
+   "participantType": "PRACTICE",
+   "ghost": false,
+   "startTimeSeconds": 1779546900
+  },
+  "programmingLanguage": "C++17 (GCC 7-32)",
+  "verdict": "OK",
+  "testset": "TESTS",
+  "passedTestCount": 9,
+  "timeConsumedMillis": 78,
+  "memoryConsumedBytes": 0
+ }
+]

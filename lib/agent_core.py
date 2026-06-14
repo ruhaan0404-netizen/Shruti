@@ -23,6 +23,54 @@ def tell_the_user(response:str):
     asyncio.run(speak_response(response))
     return "Successfully addressed the user."
 
+@tool
+def ask_the_user(question: str) -> str:
+    """
+    Call this tool when you are missing critical information to draft an email 
+    (e.g., recipient email address, subject line, or specific content details).
+    """
+    import asyncio
+    import io
+    import numpy as np
+    from scipy.io import wavfile
+    import interact 
+
+    # 1. Update UI and Speak (Synchronous wrapper)
+    try:
+        if interact.MAIN_LOOP:
+            asyncio.run_coroutine_threadsafe(
+                interact.broadcast_state("asking_user", question, draft_text=""), 
+                interact.MAIN_LOOP
+            )
+        asyncio.run(interact.speak_response(question))
+    except Exception as e:
+        print(f"⚠️ UI/Speech Error: {e}")
+
+    # 2. Listen via Microphone
+    print(f"\n[Agent]: {question}")
+    interact.listen()
+
+    # 3. Process Audio with Whisper
+    if interact.audio_buffer:
+        final_audio = np.concatenate(interact.audio_buffer, axis=0).flatten()
+        virtual_file = io.BytesIO()
+        wavfile.write(virtual_file, interact.SAMPLE_RATE, final_audio)
+        virtual_file.seek(0)
+        
+        try:
+            transcription = interact.client.audio.transcriptions.create(
+                file=("audio.wav", virtual_file.read()), 
+                model="whisper-large-v3",
+                response_format="text",
+                temperature=0.0
+            )
+            return transcription.strip()
+        except Exception as e:
+            return f"System Error: User spoke, but transcription failed ({e}). Ask them to repeat."
+            
+    return "System Error: No audio detected. Please ask the user again."
+
+
 # ----------------------------------------------------- #
 # Use gemini for tool calling and subagent execution
 model = init_chat_model("meta-llama/llama-4-scout-17b-16e-instruct", model_provider="groq", temperature=0.7) # Initialising the subagent model.
@@ -48,7 +96,7 @@ codeforces_agent = create_agent(
 
 general_agent = create_agent(
     model,
-    tools=[tell_the_user],
+    tools=[tell_the_user,ask_the_user],
     system_prompt=GENERAL_AGENT_PROMPT
 )
 # ------------------------------------------------------ #
@@ -74,8 +122,6 @@ def supervisor_node(state: AgentState):
     # 2. Fix Duplication: Compile history cleanly
     # We combine the system message, main history, and the latest worker reports
     messages_for_supervisor = [system_msg] + state["messages"]
-    if "task_results" in state and state["task_results"]:
-        messages_for_supervisor += state["task_results"]
         
     print(messages_for_supervisor)
 

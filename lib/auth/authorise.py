@@ -4,6 +4,7 @@ from google.auth.transport.requests import Request
 from google.oauth2.credentials import Credentials
 from google_auth_oauthlib.flow import InstalledAppFlow
 from googleapiclient.discovery import build
+from pathlib import Path
 
 load_dotenv()
 
@@ -17,8 +18,9 @@ def authorise()->Credentials:
         if _creds and _creds.expired and _creds.refresh_token:
             _creds.refresh(Request())
         else:
+            folder = Path("C:\\Users\\Rishav\\Jarvis\\lib\\auth")
             flow = InstalledAppFlow.from_client_secrets_file(
-                "credentials1.json", SCOPES
+                folder/"credentials1.json", SCOPES
             )
             _creds = flow.run_local_server(port=0)
         with open("token.json", "w") as token:

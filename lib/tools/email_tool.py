@@ -1,7 +1,8 @@
 import base64
 import re
+import codecs
 from load_dotenv import load_dotenv
-from tools import authorise
+from auth import authorise
 from googleapiclient.discovery import build
 from email.message import EmailMessage
 from pydantic import BaseModel, Field
@@ -30,7 +31,8 @@ writer_prompt=(
     "3. `username`: Ask the user for the recipient's email address (e.g., uhand334@gmail.com). Replace 'at the rate' with '@'.\n"
     "CRITICAL: Once the draft is complete and requires no further input, you MUST ask the user 'Shall we finalise this?'. "
     "If the user responds positively, set `question_for_user` to exactly 'FINALISE!'. This acts as a system command to finish the task.\n"
-    "Call the provided tool to structure your response." # <-- Added this gentle nudge
+    "Call the provided tool to structure your response."
+    "If the user asks to abort the action. Reply with 'ABORT'."
 )
 
 MSG = Union[HumanMessage,AIMessage]
@@ -48,20 +50,29 @@ writer_agent = writer_model.with_structured_output(WriterResponse)
 def writer_node(state: WriterState):
     messages = [SystemMessage(content=writer_prompt)] + state["messages"]
     response: WriterResponse = writer_agent.invoke(messages)
-    ai_msg = AIMessage(
-        content=response.question_for_user,
-        additional_kwargs={
-            "temporary_letter": response.temporary_letter,
-            "question_for_user": response.question_for_user
-        }
-    )
+    if response.question_for_user == "ABORT":
+        ai_msg = AIMessage(
+            content=response.question_for_user,
+            additional_kwargs={
+                "temporary_letter": "ABORT",
+                "question_for_user": "ABORT"
+            }
+        )
+    else:
+        ai_msg = AIMessage(
+            content=response.question_for_user,
+            additional_kwargs={
+                "temporary_letter": response.temporary_letter,
+                "question_for_user": response.question_for_user
+            }
+        )
     return {"messages": [ai_msg]}
 
 def conditional_node(state: WriterState):
     latest_message = state["messages"][-1]
     question = latest_message.additional_kwargs.get("question_for_user", "")
     print(question)
-    if question == "FINALISE!":
+    if question == "FINALISE!" or question == "ABORT":
         return END
     else:
         return "User_Query"
@@ -198,9 +209,10 @@ def create_draft(to:str,sender:str,subject:str,message_body:str):
     if not is_valid_email(to):
         return f"ERROR: '{to}' is not a valid email address. Stop. Use the `ask_user` tool to ask the user for the correct email address."
     # -----------------------
+    clean_text = codecs.decode(message_body, 'unicode_escape')
     try:
         message = EmailMessage()
-        message.set_content(message_body)
+        message.set_content(clean_text)
         message['To'] = to.strip()
         message['From'] = sender
         message['Subject'] = subject
@@ -242,7 +254,6 @@ def update_draft(draft_id:str,new_to:str,new_from:str,new_subject:str,new_conten
     message['To']=new_to
     message['From']=new_from
     message['Subject']=new_subject
-
     encoded_message = base64.urlsafe_b64encode(message.as_bytes()).decode()
     draft_body={"message":{"raw": encoded_message}}
     updated_draft = e_service.users().drafts().update(userId='me',id=draft_id,body=draft_body).execute()
@@ -269,7 +280,6 @@ def find_draft_id(to:str,subject:str,body_keys:str):
         query_parts.append(f"subject:{subject}")
     if body_keys:
         query_parts.append(f"{body_keys}")
-
     search_query = " ".join(query_parts)
     results = e_service.users().drafts().list(userId='me',q=search_query).execute()
     drafts = results.get('drafts',[])

@@ -1,5 +1,5 @@
 from langchain_core.tools import tool
-from tools import authorise
+from auth import authorise
 from googleapiclient.discovery import build
 from pydantic import BaseModel, Field
 from langchain.tools import tool
@@ -16,6 +16,45 @@ class EventDetails(BaseModel):
     start: Optional[EventDateTime] = Field(None, description="The new start time of the event.")
     end: Optional[EventDateTime] = Field(None, description="The new end time of the event.")
     description: Optional[str] = Field(None, description="Any notes or description for the event.")
+
+@tool
+def ask_user(question: str) -> str:
+    """
+    Call this tool when you are missing critical information to draft an email 
+    (e.g., recipient email address, subject line, or specific content details).
+    """
+    import asyncio
+    import io
+    import numpy as np
+    from scipy.io import wavfile
+    import interact
+    try:
+        if interact.MAIN_LOOP:
+            asyncio.run_coroutine_threadsafe(
+                interact.broadcast_state("asking_user", question, draft_text=""), 
+                interact.MAIN_LOOP
+            )
+        asyncio.run(interact.speak_response(question))
+    except Exception as e:
+        print(f"⚠️ UI/Speech Error: {e}")
+    print(f"\n[Agent]: {question}")
+    interact.listen()
+    if interact.audio_buffer:
+        final_audio = np.concatenate(interact.audio_buffer, axis=0).flatten()
+        virtual_file = io.BytesIO()
+        wavfile.write(virtual_file, interact.SAMPLE_RATE, final_audio)
+        virtual_file.seek(0)
+        try:
+            transcription = interact.client.audio.transcriptions.create(
+                file=("audio.wav", virtual_file.read()), 
+                model="whisper-large-v3",
+                response_format="text",
+                temperature=0.0
+            )
+            return transcription.strip()
+        except Exception as e:
+            return f"System Error: User spoke, but transcription failed ({e}). Ask them to repeat." 
+    return "System Error: No audio detected. Please ask the user again."
 
 @tool
 def get_events(start:str,end:str,cal_id:str='primary'):
@@ -85,4 +124,4 @@ def add_event(event_details:EventDetails):
         body=event_details
     ).execute()
 
-CALENDAR_TOOLS = [get_events, is_busy, get_specific_event, delete_event, update_event, add_event]
+CALENDAR_TOOLS = [get_events, is_busy, get_specific_event, delete_event, update_event, add_event, ask_user]
