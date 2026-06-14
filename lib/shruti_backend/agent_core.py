@@ -1,12 +1,12 @@
 from langgraph.graph import StateGraph, START, END
 from langchain.messages import SystemMessage, HumanMessage, AIMessage
-from agentstate import AgentState, Task, TaskBatch
+from lib.shruti_backend.agentstate import AgentState, Task, TaskBatch
 from dotenv import load_dotenv
 from langchain.tools import tool
 from langchain.chat_models import init_chat_model
 from langchain.agents import create_agent
 from langgraph.checkpoint.serde.jsonplus import JsonPlusSerializer
-from prompt import  SUPERVISOR_PROMPT, CALENDAR_AGENT_PROMPT, EMAIL_AGENT_PROMPT, CODEFORCES_AGENT_PROMPT, GENERAL_AGENT_PROMPT
+from lib.shruti_backend.prompt import  SUPERVISOR_PROMPT, CALENDAR_AGENT_PROMPT, EMAIL_AGENT_PROMPT, CODEFORCES_AGENT_PROMPT, GENERAL_AGENT_PROMPT
 from tools.calendar_tool import CALENDAR_TOOLS
 from tools.email_tool import EMAIL_TOOLS
 from tools.codeforces_tool import CODEFORCES_TOOLS
@@ -18,7 +18,7 @@ load_dotenv() # Load the environment variables(API keys, other parameters)
 @tool
 def tell_the_user(response:str):
     """This function helps you address the user.Pass your reply as the argument response to the user."""
-    from interact import speak_response
+    from lib.shruti_backend.interact import speak_response
     import asyncio
     asyncio.run(speak_response(response))
     return "Successfully addressed the user."
@@ -33,7 +33,7 @@ def ask_the_user(question: str) -> str:
     import io
     import numpy as np
     from scipy.io import wavfile
-    import interact 
+    import lib.shruti_backend.interact as interact 
 
     # 1. Update UI and Speak (Synchronous wrapper)
     try:

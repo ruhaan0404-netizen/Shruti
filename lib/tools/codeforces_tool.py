@@ -78,7 +78,7 @@ def ask_user(question: str) -> str:
     import io
     import numpy as np
     from scipy.io import wavfile
-    import interact 
+    import lib.shruti_backend.interact as interact 
     try:
         if interact.MAIN_LOOP:
             asyncio.run_coroutine_threadsafe(

@@ -18,7 +18,7 @@ from scipy.io import wavfile
 from groq import Groq
 import sounddevice as sd
 from silero_vad import load_silero_vad
-from agent_core import agent_exe_graph
+from lib.shruti_backend.agent_core import agent_exe_graph
 from langchain.messages import HumanMessage
 from tools.codeforces_tool import qdrant_client
 from qdrant_client.models import Distance, VectorParams

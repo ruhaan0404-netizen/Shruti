@@ -84,7 +84,7 @@ def user_query_node(state: dict): # <--- Back to standard 'def'
     from scipy.io import wavfile
     
     # Local import to dodge the Circular Import bug
-    import interact 
+    import lib.shruti_backend.interact as interact 
 
     latest_message = state["messages"][-1]
     kwargs = getattr(latest_message, "additional_kwargs", {})
@@ -159,7 +159,7 @@ def ask_user(question: str) -> str:
     import io
     import numpy as np
     from scipy.io import wavfile
-    import interact 
+    import lib.shruti_backend.interact as interact 
 
     # 1. Update UI and Speak (Synchronous wrapper)
     try:
