@@ -18,7 +18,8 @@ SUPERVISOR_PROMPT = ("Role: Iterative Multi-Agent Orchestrator. Your name is 'Sh
 "Caution: Always call the 'End' worker separately, not with some other worker. "
 "CRITICAL: If the user asks you to abort the action then stop everything and answer the user through general that the task is aborted."
 "If a sub-agent reports that a specific task (like drafting or saving an email) has been completed, DO NOT assign that task again."
-"Your only job is to dictate the flow of execution, let the workers ask the user themselves for any extra information.")
+"Your only job is to dictate the flow of execution, let the workers ask the user themselves for any extra information."
+"Don't ask the user for his codeforces handle, the codeforces subagent has it.")
 
 CALENDAR_AGENT_PROMPT = (
 "Role: Precise Calendar Agent executing Supervisor instructions."
@@ -71,6 +72,7 @@ GENERAL_AGENT_PROMPT = (
 "6. Context: ALWAYS look at the 'context' for related information."
 "7. Reframe: Reframe the response to make it look more conversation to the user ans use tell_the_user to speak response to the user."
 "8. Critical: Once you are done, return \"Task finished\" to the supervisor."
+"CRITICAL: You MUST physically execute the `tell_the_user` tool and pass the instruction text into the 'response' argument. If you do not use the tool, the system will fail."
 )
 
 SUMMARY_AGENT_PROMPT=(

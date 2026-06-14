@@ -1,36 +1,284 @@
 import 'package:flutter/material.dart';
+import 'package:google_fonts/google_fonts.dart';
 import 'package:web_socket_channel/web_socket_channel.dart';
 import 'dart:convert';
 import 'dart:ui';
+import 'dart:math' as math;
 
 void main() {
-  runApp(const ChitraApp());
+  runApp(const ShrutiApp());
 }
 
-class ChitraApp extends StatelessWidget {
-  const ChitraApp({super.key});
+class ShrutiApp extends StatelessWidget {
+  const ShrutiApp({super.key});
 
   @override
   Widget build(BuildContext context) {
     return MaterialApp(
-      title: 'Chitra Voice Assistant',
+      title: 'Shruti Voice Assistant',
       theme: ThemeData.light().copyWith(
         primaryColor: const Color(0xFFFFB300), // Amber accent
       ),
-      home: const ChitraHomeScreen(),
+      home: const SplashScreen(),
       debugShowCheckedModeBanner: false,
     );
   }
 }
 
-class ChitraHomeScreen extends StatefulWidget {
-  const ChitraHomeScreen({super.key});
+// ==========================================
+// 1. THE SPLASH SCREEN WIDGET (Theatrical Curtains)
+// ==========================================
+class SplashScreen extends StatefulWidget {
+  const SplashScreen({super.key});
 
   @override
-  State<ChitraHomeScreen> createState() => _ChitraHomeScreenState();
+  State<SplashScreen> createState() => _SplashScreenState();
 }
 
-class _ChitraHomeScreenState extends State<ChitraHomeScreen>
+class _SplashScreenState extends State<SplashScreen>
+    with SingleTickerProviderStateMixin {
+  late AnimationController _curtainController;
+  late Animation<double> _curtainProgress;
+
+  @override
+  void initState() {
+    super.initState();
+
+    _curtainController = AnimationController(
+      vsync: this,
+      duration: const Duration(
+        milliseconds: 1500,
+      ), // Slightly slower for dramatic effect
+    );
+
+    // This single value tracks the "openness" of the curtain from 0.0 to 1.0
+    _curtainProgress = Tween<double>(begin: 0.0, end: 1.0).animate(
+      CurvedAnimation(parent: _curtainController, curve: Curves.easeInOutCubic),
+    );
+
+    _startSequence();
+  }
+
+  void _startSequence() async {
+    await Future.delayed(const Duration(milliseconds: 600));
+    if (!mounted) return;
+
+    await _curtainController.forward();
+
+    await Future.delayed(const Duration(seconds: 1));
+    if (!mounted) return;
+
+    Navigator.pushReplacement(
+      context,
+      PageRouteBuilder(
+        pageBuilder: (context, animation, secondaryAnimation) =>
+            FadeTransition(opacity: animation, child: const ShrutiHomeScreen()),
+        transitionDuration: const Duration(milliseconds: 600),
+      ),
+    );
+  }
+
+  @override
+  void dispose() {
+    _curtainController.dispose();
+    super.dispose();
+  }
+
+  Widget _buildCurtainPanel(bool isLeft, Size size) {
+    // A complex gradient to simulate deep red velvet folds
+    const curtainGradient = LinearGradient(
+      colors: [
+        Color(0xFF5D0000), // Deep shadow
+        Color(0xFFD32F2F), // Highlight
+        Color(0xFF7F0000), // Shadow
+        Color(0xFFE53935), // Highlight
+        Color(0xFF5D0000), // Deep shadow
+      ],
+      stops: [0.0, 0.25, 0.5, 0.75, 1.0],
+    );
+
+    return AnimatedBuilder(
+      animation: _curtainProgress,
+      builder: (context, child) {
+        // As the curtain opens, we squash its width down to simulate gathering fabric.
+        // math.max prevents the scale from hitting exactly 0.0, which can cause rendering errors.
+        final scaleX = math.max(0.001, 1.0 - _curtainProgress.value);
+
+        return Transform(
+          alignment: isLeft ? Alignment.centerLeft : Alignment.centerRight,
+          // ignore: deprecated_member_use
+          transform: Matrix4.identity()..scale(scaleX, 1.0),
+          child: ClipPath(
+            clipper: CurtainClipper(
+              progress: _curtainProgress.value,
+              isLeft: isLeft,
+            ),
+            child: Container(
+              width: size.width / 2,
+              height: size.height,
+              decoration: const BoxDecoration(
+                gradient: curtainGradient,
+                boxShadow: [
+                  BoxShadow(
+                    color: Colors.black87,
+                    blurRadius: 20,
+                    spreadRadius: 5,
+                  ),
+                ],
+              ),
+            ),
+          ),
+        );
+      },
+    );
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final size = MediaQuery.of(context).size;
+
+    return Scaffold(
+      body: Stack(
+        children: [
+          // LAYER 1: The App UI hiding behind the curtains
+          Container(
+            width: size.width,
+            height: size.height,
+            decoration: const BoxDecoration(
+              gradient: LinearGradient(
+                begin: Alignment.topLeft,
+                end: Alignment.bottomRight,
+                colors: [Color(0xFFFFE082), Color(0xFFFF8F00)],
+              ),
+            ),
+            child: Center(
+              child: Stack(
+                children: [
+                  Image.asset(
+                    'assets/welcome_border.png',
+                    width: double.infinity,
+                    height: double.infinity,
+                    fit: BoxFit.fitHeight,
+                  ),
+                  Center(
+                    child: Column(
+                      children: [
+                        const SizedBox(height: 200, width: 50),
+                        Image.asset(
+                          'assets/welcoming_woman.png',
+                          width: 500,
+                          height: 300,
+                          fit: BoxFit.contain,
+                        ),
+                        const SizedBox(height: 24),
+                        const Text(
+                          'SHRUTI',
+                          style: TextStyle(
+                            fontSize: 50,
+                            fontFamily: 'Samarkan',
+                            letterSpacing: 4,
+                            color: Colors.white,
+                            shadows: [
+                              Shadow(
+                                color: Colors.black26,
+                                blurRadius: 10,
+                                offset: Offset(0, 4),
+                              ),
+                            ],
+                          ),
+                        ),
+                        const SizedBox(height: 5),
+                        Text(
+                          'At Your Service.',
+                          style: GoogleFonts.inter(
+                            textStyle: const TextStyle(
+                              fontSize: 24,
+                              color: Colors.white,
+                              fontWeight: FontWeight.bold,
+                            ),
+                          ),
+                        ),
+                      ],
+                    ),
+                  ),
+                ],
+              ),
+            ),
+          ),
+          // LAYER 2: Left Gathered Curtain
+          Align(
+            alignment: Alignment.centerLeft,
+            child: _buildCurtainPanel(true, size),
+          ),
+
+          // LAYER 3: Right Gathered Curtain
+          Align(
+            alignment: Alignment.centerRight,
+            child: _buildCurtainPanel(false, size),
+          ),
+        ],
+      ),
+    );
+  }
+}
+
+// ==========================================
+// 2. THE CUSTOM FABRIC CLIPPER
+// ==========================================
+class CurtainClipper extends CustomClipper<Path> {
+  final double progress;
+  final bool isLeft;
+
+  CurtainClipper({required this.progress, required this.isLeft});
+
+  @override
+  Path getClip(Size size) {
+    final path = Path();
+
+    if (isLeft) {
+      path.moveTo(0, 0); // Anchor to top-left wall
+      path.lineTo(0, size.height); // Down to bottom-left floor
+
+      // Control point anchors the swoop to the floor,
+      // End point yanks the inner hem upward diagonally.
+      path.quadraticBezierTo(
+        size.width,
+        size.height,
+        size.width,
+        size.height * (1 - progress),
+      );
+
+      path.lineTo(size.width, 0); // Straight up to the ceiling rod
+    } else {
+      path.moveTo(size.width, 0); // Anchor to top-right wall
+      path.lineTo(size.width, size.height); // Down to bottom-right floor
+
+      // Mirror the left side bezier math
+      path.quadraticBezierTo(0, size.height, 0, size.height * (1 - progress));
+
+      path.lineTo(0, 0);
+    }
+
+    path.close();
+    return path;
+  }
+
+  @override
+  bool shouldReclip(CurtainClipper oldClipper) =>
+      progress != oldClipper.progress;
+}
+//==========================================
+// 1. THE HOME SCREEN WIDGET
+// ==========================================
+
+class ShrutiHomeScreen extends StatefulWidget {
+  const ShrutiHomeScreen({super.key});
+
+  @override
+  State<ShrutiHomeScreen> createState() => _ShrutiHomeScreenState();
+}
+
+class _ShrutiHomeScreenState extends State<ShrutiHomeScreen>
     with TickerProviderStateMixin {
   late WebSocketChannel _channel;
   String _status = 'idle';

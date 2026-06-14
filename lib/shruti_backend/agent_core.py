@@ -56,7 +56,6 @@ def ask_the_user(question: str) -> str:
         virtual_file = io.BytesIO()
         wavfile.write(virtual_file, interact.SAMPLE_RATE, final_audio)
         virtual_file.seek(0)
-        
         try:
             transcription = interact.client.audio.transcriptions.create(
                 file=("audio.wav", virtual_file.read()), 
@@ -112,8 +111,8 @@ supervisor_agent = supervisor_model.with_structured_output(TaskBatch)
 # ------------------------------------------------------ #
 # Nodes of the graph
 def prune_node(state: AgentState):
-    if len(state["messages"])>4:
-        old_messages = state["messages"][:-4]
+    if len(state["messages"])>10:
+        old_messages = state["messages"][:-10]
         sum_msg = [state["summary"]]+old_messages
         response = summary_agent.invoke({"messages":sum_msg})
         sum = response["messages"][-1].content

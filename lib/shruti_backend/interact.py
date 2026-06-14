@@ -27,6 +27,8 @@ from qdrant_client.models import Distance, VectorParams
 load_dotenv()
 
 MAIN_LOOP = None
+One_Liners = ["Consider it done.","All wrapped up. What’s next?","Handled it.","Done and dusted.","Smooth sailing. Task complete."]
+ct = 0
 
 # --- 1. INITIALIZATION ---
 raw_key = os.getenv("GROQ_API_KEY")
@@ -155,9 +157,12 @@ async def process_voice_command():
                 "current_batch_index":0,
                 "summary":HumanMessage(content="")
                 }
+            global ct
+            global One_Liners
             graph_config = {"configurable": {"thread_id": "voice_session_001"}}
             final_state = await agent_exe_graph.ainvoke(graph_inputs, config=graph_config)
-            await broadcast_state("success", "Anything else?")
+            await broadcast_state("success", One_Liners[ct%5])
+            ct+=1
         except Exception as e:
             print(f"❌ Cloud transcription failed: {e}")
             await broadcast_state("error", "Failed to connect to cloud.")

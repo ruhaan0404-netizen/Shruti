@@ -91,7 +91,6 @@ def ask_user(question: str) -> str:
     except Exception as e:
         print(f"⚠️ UI/Speech Error: {e}")
     print(f"\n[Agent]: {question}")
-    interact.broadcast_state("listening", "Listening...")
     interact.listen()
     if interact.audio_buffer:
         final_audio = np.concatenate(interact.audio_buffer, axis=0).flatten()
