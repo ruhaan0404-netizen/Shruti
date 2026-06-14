@@ -18,7 +18,7 @@ def authorise()->Credentials:
         if _creds and _creds.expired and _creds.refresh_token:
             _creds.refresh(Request())
         else:
-            folder = Path("C:\\Users\\Rishav\\Jarvis\\lib\\auth")
+            folder = Path(r"C:\Users\Rishav\Shruti\lib\shruti_backend\auth")
             flow = InstalledAppFlow.from_client_secrets_file(
                 folder/"credentials1.json", SCOPES
             )

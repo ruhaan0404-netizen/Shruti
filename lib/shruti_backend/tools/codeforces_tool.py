@@ -80,7 +80,7 @@ def ask_user(question: str) -> str:
     import io
     import numpy as np
     from scipy.io import wavfile
-    import lib.shruti_backend.interact as interact 
+    import interact 
     try:
         if interact.MAIN_LOOP:
             asyncio.run_coroutine_threadsafe(
@@ -155,7 +155,7 @@ def ask_codeforces(codeforces_url: str, contest_id: int = None):
         main_text = children_divs[1].get_text(separator=" ", strip=True) if len(children_divs) > 1 else ""
         diction = {
             "metadata": {
-                "title": problem_part.find("div", class_="title").decode(indent_level=1,encoding='utf-8'),
+                "title": problem_part.find("div", class_="title").get_text(strip=True),
                 "time_limit": problem_part.find("div", class_="time-limit").get_text(" ", strip=True).replace("time limit per test ", ""),
                 "output": problem_part.find("div", class_="output-specification").get_text(separator=" ", strip=True)
             },

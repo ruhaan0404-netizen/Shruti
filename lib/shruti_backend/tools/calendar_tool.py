@@ -1,5 +1,5 @@
 from langchain_core.tools import tool
-from lib.shruti_backend.auth import authorise
+from auth import authorise
 from googleapiclient.discovery import build
 from pydantic import BaseModel, Field
 from langchain.tools import tool
@@ -27,7 +27,7 @@ def ask_user(question: str) -> str:
     import io
     import numpy as np
     from scipy.io import wavfile
-    import lib.shruti_backend.interact as interact
+    import interact
     try:
         if interact.MAIN_LOOP:
             asyncio.run_coroutine_threadsafe(

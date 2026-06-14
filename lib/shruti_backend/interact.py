@@ -158,9 +158,7 @@ async def process_voice_command():
             graph_inputs = {"messages": [HumanMessage(content=result_text)],"current_batch_index":0}
             graph_config = {"configurable": {"thread_id": "voice_session_001"}}
             final_state = await agent_exe_graph.ainvoke(graph_inputs, config=graph_config)
-            agent_response = final_state["messages"][-1].content
-            await speak_response(agent_response)
-            await broadcast_state("success", agent_response)
+            await broadcast_state("success", "Anything else?")
         except Exception as e:
             print(f"❌ Cloud transcription failed: {e}")
             await broadcast_state("error", "Failed to connect to cloud.")

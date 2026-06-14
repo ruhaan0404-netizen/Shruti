@@ -2,7 +2,7 @@ import base64
 import re
 import codecs
 from load_dotenv import load_dotenv
-from lib.shruti_backend.auth import authorise
+from auth import authorise
 from googleapiclient.discovery import build
 from email.message import EmailMessage
 from pydantic import BaseModel, Field
@@ -84,7 +84,7 @@ def user_query_node(state: dict): # <--- Back to standard 'def'
     from scipy.io import wavfile
     
     # Local import to dodge the Circular Import bug
-    import lib.shruti_backend.interact as interact 
+    import interact 
 
     latest_message = state["messages"][-1]
     kwargs = getattr(latest_message, "additional_kwargs", {})
@@ -159,7 +159,7 @@ def ask_user(question: str) -> str:
     import io
     import numpy as np
     from scipy.io import wavfile
-    import lib.shruti_backend.interact as interact 
+    import interact
 
     # 1. Update UI and Speak (Synchronous wrapper)
     try:

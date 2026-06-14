@@ -18,7 +18,7 @@ load_dotenv() # Load the environment variables(API keys, other parameters)
 @tool
 def tell_the_user(response:str):
     """This function helps you address the user.Pass your reply as the argument response to the user."""
-    from lib.shruti_backend.interact import speak_response
+    from interact import speak_response
     import asyncio
     asyncio.run(speak_response(response))
     return "Successfully addressed the user."
@@ -33,7 +33,7 @@ def ask_the_user(question: str) -> str:
     import io
     import numpy as np
     from scipy.io import wavfile
-    import lib.shruti_backend.interact as interact 
+    import interact 
 
     # 1. Update UI and Speak (Synchronous wrapper)
     try:

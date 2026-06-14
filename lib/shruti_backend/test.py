@@ -1,4 +1,4 @@
-from lib.shruti_backend.agent_core import agent_exe_graph
+from agent_core import agent_exe_graph
 from langchain.messages import HumanMessage
 
 user_input = input("Mike testing 123")
