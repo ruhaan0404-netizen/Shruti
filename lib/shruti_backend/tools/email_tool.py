@@ -82,17 +82,11 @@ def user_query_node(state: dict): # <--- Back to standard 'def'
     import io
     import numpy as np
     from scipy.io import wavfile
-    
-    # Local import to dodge the Circular Import bug
     import interact 
-
     latest_message = state["messages"][-1]
     kwargs = getattr(latest_message, "additional_kwargs", {})
     draft_text = kwargs.get("temporary_letter", "")
     question_to_ask = kwargs.get("question_for_user", "What would you like to do next?")
-
-    print(f"\n📝 Draft text ready to send: {draft_text[:50]}...")
-    print(interact.MAIN_LOOP)
     # 1. Update UI and Speak safely from a synchronous worker thread
     try:
         # Send the WebSocket message to the main Flutter loop
@@ -109,8 +103,7 @@ def user_query_node(state: dict): # <--- Back to standard 'def'
 
     # 2. Open the microphone (blocks the thread naturally)
     print(f"\n[Agent]: {question_to_ask}")
-    interact.listen() 
-
+    interact.listen()
     # 3. Process the audio
     if interact.audio_buffer:
         print("🔄 Transcribing user feedback...")
@@ -175,7 +168,6 @@ def ask_user(question: str) -> str:
     # 2. Listen via Microphone
     print(f"\n[Agent]: {question}")
     interact.listen()
-
     # 3. Process Audio with Whisper
     if interact.audio_buffer:
         final_audio = np.concatenate(interact.audio_buffer, axis=0).flatten()

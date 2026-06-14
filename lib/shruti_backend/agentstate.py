@@ -1,7 +1,7 @@
 from typing import TypedDict, List, Annotated, Union, Any
 from pydantic import BaseModel, Field
 from langchain.messages import ToolMessage, HumanMessage, AIMessage, SystemMessage
-import operator
+from langgraph.graph.message import add_messages
 
 Message = Union[HumanMessage, AIMessage, ToolMessage, SystemMessage]
 
@@ -19,7 +19,6 @@ def manage_list(existing: List[Any], new: Union[List[Any], Any, str]):
 class Task(BaseModel):
     target_agent: str = Field(description="The agent to route to: 'Calendar', 'Email', or 'Codeforces'")
     instruction: str = Field(description="What the agent needs to do")
-    context: str = Field(description="Any relevant background info, dates, names, or user constraints needed to complete this task.")
 
 # Batch of tasks that can run at the same time(parallel execution)
 class TaskBatch(BaseModel):
@@ -28,7 +27,8 @@ class TaskBatch(BaseModel):
 
 # The LangGraph Agent State
 class AgentState(TypedDict):
-    messages: Annotated[list[Message], operator.add]
+    messages: Annotated[list[Message], add_messages]
+    summary:HumanMessage
     plan: TaskBatch
     current_batch_index: int
     # CHANGED: list[ToolMessage] -> list[Message] to accept AIMessages from workers

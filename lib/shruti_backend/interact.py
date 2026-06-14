@@ -16,6 +16,7 @@ from pathlib import Path
 from dotenv import load_dotenv
 from scipy.io import wavfile
 from groq import Groq
+from langchain.messages import RemoveMessage
 import sounddevice as sd
 from silero_vad import load_silero_vad
 from agent_core import agent_exe_graph
@@ -29,9 +30,6 @@ MAIN_LOOP = None
 
 # --- 1. INITIALIZATION ---
 raw_key = os.getenv("GROQ_API_KEY")
-if not raw_key:
-    raise ValueError("❌ GQ_API_KEY is missing from .env!")
-
 clean_key = raw_key.strip().replace('"', '').replace("'", "")
 client = Groq(api_key=clean_key)
 
@@ -99,7 +97,6 @@ def listen():
     is_recording = False
     audio_buffer.clear()
     recording_finished.clear()
-    
     with sd.InputStream(samplerate=SAMPLE_RATE, channels=1, dtype='int16', 
                         blocksize=CHUNK_SIZE, callback=audio_callback):
         recording_finished.wait()
@@ -121,14 +118,12 @@ async def speak_response(text: str):
         return
     audio_buffer.seek(0)
     if not pygame.mixer.get_init():
-        pygame.mixer.init()
-        
+        pygame.mixer.init()   
     try:
         pygame.mixer.music.load(audio_buffer)
         pygame.mixer.music.play()
         while pygame.mixer.music.get_busy():
-            await asyncio.sleep(0.1)
-            
+            await asyncio.sleep(0.1)      
     except Exception as e:
         print(f"❌ Playback error: {e}")
     finally:
@@ -155,7 +150,11 @@ async def process_voice_command():
                 temperature=0.0
             )
             result_text = transcription.strip()
-            graph_inputs = {"messages": [HumanMessage(content=result_text)],"current_batch_index":0}
+            graph_inputs = {
+                "messages": [HumanMessage(content=result_text)],
+                "current_batch_index":0,
+                "summary":HumanMessage(content="")
+                }
             graph_config = {"configurable": {"thread_id": "voice_session_001"}}
             final_state = await agent_exe_graph.ainvoke(graph_inputs, config=graph_config)
             await broadcast_state("success", "Anything else?")

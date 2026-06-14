@@ -6,7 +6,8 @@ from langchain.tools import tool
 from langchain.chat_models import init_chat_model
 from langchain.agents import create_agent
 from langgraph.checkpoint.serde.jsonplus import JsonPlusSerializer
-from prompt import SUPERVISOR_PROMPT, CALENDAR_AGENT_PROMPT, EMAIL_AGENT_PROMPT, CODEFORCES_AGENT_PROMPT, GENERAL_AGENT_PROMPT
+from langchain.messages import RemoveMessage
+from prompt import SUPERVISOR_PROMPT, CALENDAR_AGENT_PROMPT, EMAIL_AGENT_PROMPT, CODEFORCES_AGENT_PROMPT, GENERAL_AGENT_PROMPT,SUMMARY_AGENT_PROMPT
 from tools.calendar_tool import CALENDAR_TOOLS
 from tools.email_tool import EMAIL_TOOLS
 from tools.codeforces_tool import CODEFORCES_TOOLS
@@ -49,7 +50,6 @@ def ask_the_user(question: str) -> str:
     # 2. Listen via Microphone
     print(f"\n[Agent]: {question}")
     interact.listen()
-
     # 3. Process Audio with Whisper
     if interact.audio_buffer:
         final_audio = np.concatenate(interact.audio_buffer, axis=0).flatten()
@@ -99,6 +99,11 @@ general_agent = create_agent(
     tools=[tell_the_user,ask_the_user],
     system_prompt=GENERAL_AGENT_PROMPT
 )
+
+summary_agent = create_agent(
+    model,
+    system_prompt=SUMMARY_AGENT_PROMPT
+)
 # ------------------------------------------------------ #
 # Mend the supervisor agent using groq for speed and efficiency
 supervisor_model = init_chat_model("openai/gpt-oss-120b", model_provider="groq", temperature=0.7)
@@ -106,11 +111,23 @@ supervisor_model = init_chat_model("openai/gpt-oss-120b", model_provider="groq",
 supervisor_agent = supervisor_model.with_structured_output(TaskBatch) 
 # ------------------------------------------------------ #
 # Nodes of the graph
+def prune_node(state: AgentState):
+    if len(state["messages"])>4:
+        old_messages = state["messages"][:-4]
+        sum_msg = [state["summary"]]+old_messages
+        response = summary_agent.invoke({"messages":sum_msg})
+        sum = response["messages"][-1].content
+        summary = HumanMessage(content=f"Here's a summary of the previous chats:-\n{sum}")
+        delete_instructions = [RemoveMessage(id=msg.id) for msg in old_messages]
+        return {
+            "summary":summary,
+            "messages": delete_instructions}
+    else:
+        return {"summary":HumanMessage(content="No previous chats.")}
+
 def supervisor_node(state: AgentState):
     current_index = state.get("current_batch_index", 0)
     print(f"Batch Index: {current_index}")
-    
-    # 1. Fix Amnesia: Inject a strict memory directive into the system prompt
     memory_directive = (
         "CRITICAL DIRECTIVE: Read the message history carefully. "
         "If a worker agent just reported that they successfully completed a task "
@@ -118,32 +135,25 @@ def supervisor_node(state: AgentState):
         "If the user's overall goal is met, your next target_agent MUST be 'End'."
     )
     system_msg = SystemMessage(content=SUPERVISOR_PROMPT + memory_directive)
-    
-    # 2. Fix Duplication: Compile history cleanly
-    # We combine the system message, main history, and the latest worker reports
-    messages_for_supervisor = [system_msg] + state["messages"]
-        
-    print(messages_for_supervisor)
+    summary = state["summary"]
+    messages_for_supervisor = [system_msg,summary] + state["messages"]
+
+    print(state["messages"])
 
     plan: TaskBatch = supervisor_agent.invoke(messages_for_supervisor)
     print(f"Supervisor Plan: {plan}")
-    
-    # 3. Handle Workflow Completion
     if not plan or not plan.tasks or plan.tasks[0].target_agent == "End":
         task_results = state.get("task_results", [])
         final_response = task_results[-1] if task_results else HumanMessage(content="Workflow ended.")
-        
         return {
             "plan": plan, 
             "messages": [final_response],
             "task_results": [], 
             "current_batch_index": current_index + 1
         }
-    # 4. Handle Ongoing Execution
     else:
         return {
             "plan": plan, 
-            # FIX: Use [] to clear lists safely, NEVER the string "cls"
             "task_results": [], 
             "current_batch_index": current_index + 1
         }
@@ -184,11 +194,13 @@ graph = StateGraph(AgentState)
 
 graph.add_node("Supervisor",supervisor_node)
 graph.add_node("Worker",worker_node)
+graph.add_node("Summarizer",prune_node)
 # ------------------------------------------------------ #
 # Edges of the graph
-graph.add_edge(START,"Supervisor")
+graph.add_edge(START,"Summarizer")
+graph.add_edge("Summarizer","Supervisor")
 graph.add_conditional_edges("Supervisor",router_node)
-graph.add_edge("Worker","Supervisor")
+graph.add_edge("Worker","Summarizer")
 # ------------------------------------------------------ #
 # Compiled graph
 serializer = JsonPlusSerializer(allowed_msgpack_modules='messages')
