@@ -2,7 +2,7 @@ import base64
 import re
 import codecs
 from load_dotenv import load_dotenv
-from auth import authorise
+from lib.shruti_backend.auth import authorise
 from googleapiclient.discovery import build
 from email.message import EmailMessage
 from pydantic import BaseModel, Field

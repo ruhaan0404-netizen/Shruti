@@ -20,7 +20,7 @@ import sounddevice as sd
 from silero_vad import load_silero_vad
 from agent_core import agent_exe_graph
 from langchain.messages import HumanMessage
-from lib.shruti_backend.tools.codeforces_tool import qdrant_client
+from tools.codeforces_tool import qdrant_client
 from qdrant_client.models import Distance, VectorParams
 
 load_dotenv()

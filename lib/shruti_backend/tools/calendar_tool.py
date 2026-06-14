@@ -1,5 +1,5 @@
 from langchain_core.tools import tool
-from auth import authorise
+from lib.shruti_backend.auth import authorise
 from googleapiclient.discovery import build
 from pydantic import BaseModel, Field
 from langchain.tools import tool
