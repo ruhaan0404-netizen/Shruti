@@ -7,3 +7,6 @@ lib/memory/specific_question.json
 lib/memory/recent_submission.json
 lib/shruti_ui/windows/flutter/ephemeral/
 **/ephemeral/
+lib/shruti_backend/dist
+lib/shruti_backend/build
+lib/shruti_backend/interact.spec

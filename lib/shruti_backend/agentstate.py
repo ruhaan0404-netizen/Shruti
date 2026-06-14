@@ -31,5 +31,4 @@ class AgentState(TypedDict):
     summary:HumanMessage
     plan: TaskBatch
     current_batch_index: int
-    # CHANGED: list[ToolMessage] -> list[Message] to accept AIMessages from workers
     task_results: Annotated[list[Message], manage_list]

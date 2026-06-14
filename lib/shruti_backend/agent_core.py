@@ -35,8 +35,6 @@ def ask_the_user(question: str) -> str:
     import numpy as np
     from scipy.io import wavfile
     import interact 
-
-    # 1. Update UI and Speak (Synchronous wrapper)
     try:
         if interact.MAIN_LOOP:
             asyncio.run_coroutine_threadsafe(
@@ -46,11 +44,7 @@ def ask_the_user(question: str) -> str:
         asyncio.run(interact.speak_response(question))
     except Exception as e:
         print(f"⚠️ UI/Speech Error: {e}")
-
-    # 2. Listen via Microphone
-    print(f"\n[Agent]: {question}")
     interact.listen()
-    # 3. Process Audio with Whisper
     if interact.audio_buffer:
         final_audio = np.concatenate(interact.audio_buffer, axis=0).flatten()
         virtual_file = io.BytesIO()
@@ -66,14 +60,13 @@ def ask_the_user(question: str) -> str:
             return transcription.strip()
         except Exception as e:
             return f"System Error: User spoke, but transcription failed ({e}). Ask them to repeat."
-            
     return "System Error: No audio detected. Please ask the user again."
 
 
 # ----------------------------------------------------- #
 # Use gemini for tool calling and subagent execution
 model = init_chat_model("meta-llama/llama-4-scout-17b-16e-instruct", model_provider="groq", temperature=0.7) # Initialising the subagent model.
-
+intel_model = init_chat_model("openai/gpt-oss-120b", model_provider="groq", temperature=0.7)
 # One subagent model handles multiple tasks concurrently
 calendar_agent = create_agent(
     model,
@@ -94,7 +87,7 @@ codeforces_agent = create_agent(
 )
 
 general_agent = create_agent(
-    model,
+    intel_model,
     tools=[tell_the_user,ask_the_user],
     system_prompt=GENERAL_AGENT_PROMPT
 )

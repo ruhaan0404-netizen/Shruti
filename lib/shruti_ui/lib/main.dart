@@ -316,8 +316,6 @@ class _ShrutiHomeScreenState extends State<ShrutiHomeScreen>
           setState(() {
             _status = data['status'] ?? 'idle';
             _message = data['message'] ?? '';
-
-            // --- NEW LOGIC ---
             if (_status == 'draft_review') {
               _showDraftPanel = true;
               _draftContent = data['draft_text'] ?? '';

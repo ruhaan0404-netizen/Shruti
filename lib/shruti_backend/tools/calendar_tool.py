@@ -4,6 +4,7 @@ from googleapiclient.discovery import build
 from pydantic import BaseModel, Field
 from langchain.tools import tool
 from typing import Optional
+import datetime
 
 service = build("calendar",version='v3',credentials=authorise.my_credentials)
 
@@ -17,6 +18,10 @@ class EventDetails(BaseModel):
     end: Optional[EventDateTime] = Field(None, description="The new end time of the event.")
     description: Optional[str] = Field(None, description="Any notes or description for the event.")
 
+@tool
+def current_date_and_time():
+    """Get current date and time."""
+    return datetime.datetime.now()
 @tool
 def ask_user(question: str) -> str:
     """
@@ -67,7 +72,10 @@ def get_events(start:str,end:str,cal_id:str='primary'):
         singleEvents=True,
         orderBy='startTime'
     ).execute()
-    return event_list.get('items',[])
+    if event_list['items'] != []:
+        return event_list.get('items',[])
+    else:
+        return [{"events":"NO EVENTS"}]
 
 @tool
 def is_busy(start:str,end:str):

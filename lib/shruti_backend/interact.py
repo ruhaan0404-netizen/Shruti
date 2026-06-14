@@ -80,7 +80,6 @@ def audio_callback(indata, frames, time, status):
         
     if score >= SILENCE_THRESHOLD:
         if not is_recording:
-            print("🗣️ Speech detected! Recording started...")
             is_recording = True
         silence_counter = 0
         audio_buffer.append(indata.copy())
@@ -131,7 +130,6 @@ async def speak_response(text: str):
     finally:
         pygame.mixer.music.unload()
         audio_buffer.close()
-        print("✅ Finished speaking!")
 
 # --- 4. THE ASYNC AGENT LOGIC ---
 async def process_voice_command():
@@ -178,7 +176,6 @@ async def websocket_handler(websocket):
         async for message in websocket:
             data = json.loads(message)
             if data.get("command") == "start_mic":
-                print("🎤 Mic triggered from Flutter UI!")
                 asyncio.create_task(process_voice_command())              
     except websockets.exceptions.ConnectionClosed:
         print("📱 Flutter UI Disconnected.")
@@ -195,12 +192,11 @@ async def fetch_codeforces_history_loop():
                 if data.get("status") == "OK":
                     all = data['result']
                     relevant = [item for item in all if item["verdict"]=="OK"]
-                    folder = Path("C:\\Users\\Rishav\\Jarvis\\lib\\memory")
+                    folder = Path(r"C:\Users\Rishav\Shruti\lib\memory")
                     folder.mkdir(parents=True, exist_ok=True)
                     file = folder/"recent_submission.json"
                     with open(file, "w") as f:
                         json.dump(relevant, f, indent=1)
-                    print("✅ Codeforces submission history updated.")
                 else:
                     print(f"⚠️ API returned non-OK status: {data.get('comment')}") 
             except Exception as e:
@@ -223,13 +219,10 @@ async def main():
     global MAIN_LOOP
     MAIN_LOOP = loop
     def hotkey_pressed():
-        print("⌨️ Mic triggered from Keyboard Hotkey!")
         asyncio.run_coroutine_threadsafe(process_voice_command(), loop)
     keyboard.add_hotkey('ctrl+shift+space', hotkey_pressed)
     create_collection()
     background_task = asyncio.create_task(fetch_codeforces_history_loop())
-    print("\n🚀 Starting WebSocket Server on ws://localhost:8765")
-    print("👉 Press \"Ctrl+Shift+Space\" to speak, or connect the Flutter app.")
     async with websockets.serve(websocket_handler, "localhost", 8765):
         await asyncio.Future()
 
