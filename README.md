@@ -21,7 +21,7 @@ A multimodal, agentic AI system equipped with comprehensive calendar orchestrati
 ## 🚀 See it in Action
 > 
 <div align="center">
-  <img src="docs/assets/demo.gif" alt="Demo Animation" width="600"/>
+  <video src="docs/assets/demo.gif" alt="Demo Animation" width="600"/>
 </div>
 
 ---
@@ -31,7 +31,7 @@ A multimodal, agentic AI system equipped with comprehensive calendar orchestrati
 * **Feature 2:** Implemented a stateful memory architecture using LangGraph, tracking active thread nodes in-memory for seamless task resumption and strict context preservation. Developed a dynamic conversation summarization module to bypass LLM context window constraints during extended sessions.
 * **Feature 3:** Shruti’s voice ingestion pipeline is engineered for ultra-low latency and dynamic responsiveness. By integrating Silero VAD, the system intelligently detects natural speech pauses to automatically truncate recordings. The strictly in-memory audio buffer (io.BytesIO) is then instantly routed to the Groq API, leveraging the whisper-large-v3 model for high-fidelity, millisecond-level transcription.
 * **Feature 4:** Shruti’s vocal engine is designed for absolute minimal latency. Utilizing the asynchronous streaming capabilities of Edge-TTS, the system synthesizes audio chunk-by-chunk. By routing these streams directly into an in-memory buffer (io.BytesIO) and bypassing disk I/O entirely, Shruti achieves near-instantaneous, non-blocking playback via pygame.
-* **Feature 5:** The Codeforces RAG Vault is an autonomous, semantic knowledge base that meticulously tracks your competitive programming journey. By utilizing targeted web scraping to extract raw problem statements and Gemini embeddings to vectorize AI-generated solutions, the system constructs a highly searchable repository within Qdrant Cloud. This architecture elegantly isolates rigid execution constraints—like time limits and I/O formats—into payload metadata, allowing you to seamlessly retrieve historical solutions based purely on underlying algorithmic concepts and mathematical logic rather than exact keyword matches.
+* **Feature 5:** The Codeforces RAG Vault is an autonomous, semantic knowledge base that meticulously tracks your competitive programming journey. By utilizing targeted web scraping to extract raw problem statements and Gemini embeddings to vectorize AI-generated solutions, the system constructs a highly searchable repository within Qdrant Cloud. This architecture elegantly isolates rigid execution constraints like time limits and I/O formats into payload metadata, allowing you to seamlessly retrieve historical solutions based purely on underlying algorithmic concepts and mathematical logic rather than exact keyword matches.
 
 ---
 
@@ -84,13 +84,13 @@ python main.py
 
 ## 🧭 Roadmap
 - [x] Initial UI and basic agent responses
-- [o] Websocket Connection
+- [x] Websocket Connection
 - [x] RAM memory audio file 
-- [o] Add TTS pipelinne
+- [x] Add TTS pipelinne
 - [x] Main Agent workflow and Supervisor pipeline
-- [o] Integrate subagents
+- [x] Integrate subagents
 - [x] Debugging the workflow and the connection
-- [o] Package for standalone Windows executable
+- [x] Package for standalone Windows executable
 
 ---
 
