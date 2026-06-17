@@ -21,7 +21,7 @@ A multimodal, agentic AI system equipped with comprehensive calendar orchestrati
 ## 🚀 See it in Action
 > 
 <div align="center">
-  <video src="docs/demo/demo.gif" alt="Demo Animation" width="600"/>
+  <img src="docs/assets/demo.gif" alt="Demo Animation" width="600"/>
 </div>
 
 ---

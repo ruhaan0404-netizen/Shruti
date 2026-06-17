@@ -10,3 +10,5 @@ lib/shruti_ui/windows/flutter/ephemeral/
 lib/shruti_backend/dist
 lib/shruti_backend/build
 lib/shruti_backend/interact.spec
+lib/__pycache__
+.vscode
